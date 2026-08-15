@@ -155,18 +155,7 @@
       ctx.rotate(rotation);
     }
 
-    const pillW = isCenter ? 90 * s : 82 * s;
-    const pillH = isCenter ? 36 * s : 32 * s;
     const offsetSide = isCenter ? 26 * s : 24 * s;
-
-    // Semi-transparent pill background to ensure high readability over blueprints
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.strokeStyle = isCenter ? '#1d4ed8' : '#94a3b8';
-    ctx.lineWidth = isCenter ? 1.6 * s : 1.0 * s;
-    ctx.beginPath();
-    ctx.roundRect(-pillW / 2, -pillH / 2, pillW, pillH, 6 * s);
-    ctx.fill();
-    ctx.stroke();
 
     // 1. Sao Sơn (Left) - Yellow Badge
     const sonW = 20 * s;
@@ -185,11 +174,15 @@
     ctx.textBaseline = 'middle';
     ctx.fillText(son !== undefined ? son.toString() : '-', -offsetSide, 1 * s);
 
-    // 2. Sao Vận (Center) - Large Bold Number
-    ctx.fillStyle = isCenter ? '#1d4ed8' : '#0f172a';
+    // 2. Sao Vận (Center) - Large Bold Number with crisp white halo
     ctx.font = `900 ${Math.round(isCenter ? 22 * s : 19 * s)}px "Inter", "Noto Sans", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3.5 * s;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(van !== undefined ? van.toString() : '-', 0, 1 * s);
+    ctx.fillStyle = isCenter ? '#1d4ed8' : '#0f172a';
     ctx.fillText(van !== undefined ? van.toString() : '-', 0, 1 * s);
 
     // 3. Sao Hướng (Right) - Red Circular Badge
