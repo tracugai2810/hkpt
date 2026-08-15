@@ -866,51 +866,6 @@ select.input-field {
   pointer-events: none;
 }
 
-.floorplan-grid {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 52%;
-  aspect-ratio: 1 / 1;
-}
-
-.floorplan-grid .chart-grid {
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.floorplan-grid .chart-cell {
-  padding: 2px 3px;
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.floorplan-grid.transparent-bg .chart-grid,
-.floorplan-grid.transparent-bg .chart-cell,
-.floorplan-grid.transparent-bg .center-cell,
-.floorplan-grid.transparent-bg .chart-cell.center-cell {
-  background: transparent !important;
-}
-
-.floorplan-grid .star-van {
-  font-size: 0.75rem;
-}
-
-.floorplan-grid .star-son,
-.floorplan-grid .star-huong {
-  font-size: 0.65rem;
-}
-
-.floorplan-grid .cell-top-horizontal {
-  display: none;
-}
-
-.floorplan-grid .dir-label-cell {
-  font-size: 0.5rem;
-}
-
 .fp-toggles-row {
   display: flex;
   flex-wrap: wrap;

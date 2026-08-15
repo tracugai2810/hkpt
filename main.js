@@ -281,10 +281,10 @@
         chartGrid.appendChild(cell);
     }
     
-    // Render compass around the chart grid
+    // Render compass around the chart grid (standard view keeps 3x3 grid)
     const compassCanvas = document.getElementById('compassCanvas');
     if (compassCanvas && window.Compass) {
-      window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace);
+      window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace, { showSectorStars: false });
     }
     
     // Update floorplan overlay if active

@@ -43,6 +43,18 @@
     1: 0, 2: 225, 3: 90, 4: 135, 6: 315, 7: 270, 8: 45, 9: 180
   };
 
+  const PALACE_TO_DIR_DEG = {
+    1: 0,    // Bắc (Khảm)
+    2: 225,  // Tây Nam (Khôn)
+    3: 90,   // Đông (Chấn)
+    4: 135,  // Đông Nam (Tốn)
+    5: null, // Trung Cung (Tâm)
+    6: 315,  // Tây Bắc (Càn)
+    7: 270,  // Tây (Đoài)
+    8: 45,   // Đông Bắc (Cấn)
+    9: 180   // Nam (Ly)
+  };
+
   /**
    * Converts a compass degree to a canvas API angle (in radians).
    * 0° (North) is at BOTTOM, 90° (East) at LEFT, 180° (South) at TOP, 270° (West) at RIGHT.
@@ -133,12 +145,81 @@
   }
 
   /**
-   * Renders the La Bàn (compass) to the given canvas with high contrast,
-   * bold sharp text, clear degree numbers, and connecting rays to center (0, 0).
+   * Draws a star trio badge: [Sao Sơn (Vàng)] [Sao Vận (Lớn)] [Sao Hướng (Đỏ)]
+   * positioned directly in the given direction sector.
+   */
+  function drawSectorStarTrio(ctx, x, y, rotation, s, son, van, huong, isCenter) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (rotation !== 0) {
+      ctx.rotate(rotation);
+    }
+
+    const pillW = isCenter ? 90 * s : 82 * s;
+    const pillH = isCenter ? 36 * s : 32 * s;
+    const offsetSide = isCenter ? 26 * s : 24 * s;
+
+    // Semi-transparent pill background to ensure high readability over blueprints
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeStyle = isCenter ? '#1d4ed8' : '#94a3b8';
+    ctx.lineWidth = isCenter ? 1.6 * s : 1.0 * s;
+    ctx.beginPath();
+    ctx.roundRect(-pillW / 2, -pillH / 2, pillW, pillH, 6 * s);
+    ctx.fill();
+    ctx.stroke();
+
+    // 1. Sao Sơn (Left) - Yellow Badge
+    const sonW = 20 * s;
+    const sonH = 22 * s;
+    ctx.fillStyle = '#facc15';
+    ctx.strokeStyle = '#ca8a04';
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.roundRect(-offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3 * s);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(son !== undefined ? son.toString() : '-', -offsetSide, 1 * s);
+
+    // 2. Sao Vận (Center) - Large Bold Number
+    ctx.fillStyle = isCenter ? '#1d4ed8' : '#0f172a';
+    ctx.font = `900 ${Math.round(isCenter ? 22 * s : 19 * s)}px "Inter", "Noto Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(van !== undefined ? van.toString() : '-', 0, 1 * s);
+
+    // 3. Sao Hướng (Right) - Red Circular Badge
+    const huongR = 11 * s;
+    ctx.fillStyle = '#dc2626';
+    ctx.strokeStyle = '#b91c1c';
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.arc(offsetSide, 0, huongR, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(huong !== undefined ? huong.toString() : '-', offsetSide, 1 * s);
+
+    ctx.restore();
+  }
+
+  /**
+   * Renders the La Bàn (compass) to the given canvas.
+   * Supports rendering sector stars directly in the 8 directions + Center.
    */
   function render(canvas, facingDegree, facingPalace, options) {
     options = options || {};
     const showGuideLines = options.showGuideLines !== false;
+    const showSectorStars = !!options.showSectorStars;
+    const palaces = options.palaces || null;
 
     // 1. Set canvas resolution to 1000x1000
     canvas.width = 1000;
@@ -172,8 +253,9 @@
     const R_RING_2 = 206 * s;
     const R_DIR_TEXT = 184 * s;
     const R_RING_3 = 162 * s;
+    const R_STAR_SECTOR = 105 * s;
 
-    // 5. Bold, high-contrast concentric guide circles
+    // 5. Bold concentric guide circles
     drawCircle(ctx, cx, cy, R_TICK_OUT, '#dc2626', 1.8 * s);
     drawCircle(ctx, cx, cy, R_RING_1, 'rgba(220, 38, 38, 0.65)', 1.2 * s, [5 * s, 4 * s]);
     drawCircle(ctx, cx, cy, R_RING_2, 'rgba(220, 38, 38, 0.65)', 1.2 * s, [5 * s, 4 * s]);
@@ -258,7 +340,7 @@
       ctx.fillText('HƯỚNG', 0, 0);
       ctx.restore();
 
-      // TỌA (Sitting) - Heavy Blue ray into center (màu khác phân biệt)
+      // TỌA (Sitting) - Heavy Blue ray into center
       drawRadialLine(ctx, cx, cy, 0, R_OUTER + 12 * s, sittingDegree, '#1d4ed8', 3.8 * s);
       drawArrowhead(ctx, cx, cy, R_OUTER + 14 * s, sittingDegree, 18 * s, '#1d4ed8');
 
@@ -278,14 +360,36 @@
       ctx.restore();
     }
 
-    // 11. Restore context
+    // 11. Render Sector Flying Stars directly in each direction sector & center
+    if (showSectorStars && palaces) {
+      // Draw 8 outer palace sectors
+      for (let p = 1; p <= 9; p++) {
+        if (p === 5) continue; // handle center separately
+        const dirDeg = PALACE_TO_DIR_DEG[p];
+        const pData = palaces[p];
+        if (pData && dirDeg !== null) {
+          const starPos = getXY(cx, cy, R_STAR_SECTOR, dirDeg);
+          const starRot = (dirDeg + 180) * Math.PI / 180;
+          drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false);
+        }
+      }
+
+      // Draw Center Palace (Palace 5 - Trung Cung)
+      const centerData = palaces[5];
+      if (centerData) {
+        drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true);
+      }
+    }
+
+    // 12. Restore context
     ctx.restore();
   }
 
   // Expose module functionality
   window.Compass = {
     render: render,
-    PALACE_CENTER_DEG: PALACE_CENTER_DEG
+    PALACE_CENTER_DEG: PALACE_CENTER_DEG,
+    PALACE_TO_DIR_DEG: PALACE_TO_DIR_DEG
   };
 
 })();

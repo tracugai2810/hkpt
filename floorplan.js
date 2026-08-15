@@ -261,39 +261,8 @@
   }
 
   function setupOverlay() {
-    if (!floorplanGrid || !floorplanCompass) return;
-
-    // Clone the chart grid
-    const chartGrid = document.getElementById('chartGrid');
-    if (chartGrid) {
-      floorplanGrid.innerHTML = '';
-      const clone = chartGrid.cloneNode(true);
-      clone.id = 'clonedGrid';
-      floorplanGrid.appendChild(clone);
-      updateTransparentState();
-    }
-
     calculateCenterPx();
     updateOverlayPosition();
-  }
-
-  function updateTransparentState() {
-    const isTransparent = transparentBgCheckbox && transparentBgCheckbox.checked;
-    if (floorplanGrid) {
-      if (isTransparent) {
-        floorplanGrid.classList.add('transparent-bg');
-      } else {
-        floorplanGrid.classList.remove('transparent-bg');
-      }
-      const clonedGrid = document.getElementById('clonedGrid');
-      if (clonedGrid) {
-        clonedGrid.style.background = isTransparent ? 'transparent' : 'rgba(255, 255, 255, 0.85)';
-        const cells = clonedGrid.querySelectorAll('.chart-cell, .center-cell');
-        cells.forEach(cell => {
-          cell.style.background = isTransparent ? 'transparent' : '';
-        });
-      }
-    }
   }
 
   function updateOverlayPosition() {
@@ -330,16 +299,20 @@
     const result = window._currentChartResult;
     let facingDegree = 0;
     let facingPalace = 180;
+    let palaces = null;
     
     if (result) {
       facingDegree = result.facingDegree || 0;
       if (result.facingMountain && result.facingMountain.palace) {
         facingPalace = result.facingMountain.palace;
       }
+      palaces = result.palaces || null;
     }
     
     window.Compass.render(floorplanCompass, facingDegree, facingPalace, {
-      showGuideLines: showGuideLines
+      showGuideLines: showGuideLines,
+      showSectorStars: true,
+      palaces: palaces
     });
   }
 
