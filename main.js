@@ -351,9 +351,9 @@
   }
 
   /**
-   * Universal Image Save / Share for iPhone (iOS Safari), Android, and Desktop PC.
-   * Uses Web Share API (native iOS share sheet: Save to Photos, AirDrop, Zalo, etc.) on mobile,
-   * with automatic fallback to file download or long-press preview modal.
+   * Universal Image Save / Share:
+   * - On iOS (iPhone / iPad): Uses native Web Share Sheet (to choose "Save Image" / "Lưu hình ảnh" into Photos).
+   * - On PC / Laptop / Android: Directly downloads the .png file to the device.
    */
   async function saveOrShareImage(canvasOrDataUrl, filename, title) {
     let blob = null;
@@ -372,40 +372,39 @@
       console.warn('Blob conversion error:', e);
     }
 
-    // 1. Try Web Share API with File (Native iOS Share Sheet -> Save to Photos / Thư viện ảnh)
-    if (blob && navigator.canShare) {
-      try {
-        const file = new File([blob], filename, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: title || 'Tinh Bàn Phong Thủy',
-          });
-          return; // Successfully shared or saved via iOS share sheet!
+    // Check if user is on iOS (iPhone / iPad / iPod)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // 1. FOR iOS (iPhone / iPad): Use native Share Sheet to save to Photos / Thư viện ảnh
+    if (isIOS) {
+      if (blob && navigator.canShare) {
+        try {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: title || 'Tinh Bàn Phong Thủy',
+            });
+            return;
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') return; // User closed share sheet
+          console.warn('iOS Share failed, showing modal preview fallback...', err);
         }
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          // User dismissed share sheet
-          return;
-        }
-        console.warn('Web Share failed, attempting fallback...', err);
       }
-    }
-
-    // 2. Desktop PC & Standard Android download
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-    if (!isIOS) {
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      // 3. Fallback for iOS when Web Share API is not permitted/supported: show clean long-press modal
+      // Fallback for iOS if share sheet fails
       showIOSImageModal(dataUrl, title);
+      return;
     }
+
+    // 2. FOR PC, LAPTOP & ANDROID: Direct file download
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function showIOSImageModal(dataUrl, title) {
