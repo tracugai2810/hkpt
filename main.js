@@ -350,12 +350,92 @@
     }, 150);
   }
 
+  /**
+   * Universal Image Save / Share for iPhone (iOS Safari), Android, and Desktop PC.
+   * Uses Web Share API (native iOS share sheet: Save to Photos, AirDrop, Zalo, etc.) on mobile,
+   * with automatic fallback to file download or long-press preview modal.
+   */
+  async function saveOrShareImage(canvasOrDataUrl, filename, title) {
+    let blob = null;
+    let dataUrl = '';
+
+    try {
+      if (typeof canvasOrDataUrl === 'string') {
+        dataUrl = canvasOrDataUrl;
+        const res = await fetch(dataUrl);
+        blob = await res.blob();
+      } else if (canvasOrDataUrl && canvasOrDataUrl.toBlob) {
+        blob = await new Promise(resolve => canvasOrDataUrl.toBlob(resolve, 'image/png', 1.0));
+        dataUrl = canvasOrDataUrl.toDataURL('image/png', 1.0);
+      }
+    } catch (e) {
+      console.warn('Blob conversion error:', e);
+    }
+
+    // 1. Try Web Share API with File (Native iOS Share Sheet -> Save to Photos / Thư viện ảnh)
+    if (blob && navigator.canShare) {
+      try {
+        const file = new File([blob], filename, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: title || 'Tinh Bàn Phong Thủy',
+          });
+          return; // Successfully shared or saved via iOS share sheet!
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // User dismissed share sheet
+          return;
+        }
+        console.warn('Web Share failed, attempting fallback...', err);
+      }
+    }
+
+    // 2. Desktop PC & Standard Android download
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (!isIOS) {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // 3. Fallback for iOS when Web Share API is not permitted/supported: show clean long-press modal
+      showIOSImageModal(dataUrl, title);
+    }
+  }
+
+  function showIOSImageModal(dataUrl, title) {
+    const existing = document.querySelector('.ios-save-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'ios-save-modal';
+    modal.innerHTML = `
+      <div class="ios-save-content">
+        <div class="ios-save-hint">👉 Chạm và giữ vào ảnh để chọn "Lưu vào Ảnh"</div>
+        <img src="${dataUrl}" class="ios-save-img" alt="${title || 'Tinh Bàn'}">
+        <button class="ios-save-close">Đóng</button>
+      </div>
+    `;
+
+    modal.querySelector('.ios-save-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    document.body.appendChild(modal);
+  }
+
+  window.saveOrShareImage = saveOrShareImage;
+
   function downloadChart() {
     if (!finalImage || !finalImage.src) return;
-    const link = document.createElement('a');
-    link.download = `tinhban_${document.getElementById('inputVan').value}_${document.getElementById('inputDegree').value}.png`;
-    link.href = finalImage.src;
-    link.click();
+    const filename = `tinhban_${document.getElementById('inputVan').value}_${document.getElementById('inputDegree').value}.png`;
+    saveOrShareImage(finalImage.src, filename, 'Tinh Bàn Huyền Không');
   }
 
   function copyChartToText() {

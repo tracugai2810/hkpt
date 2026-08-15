@@ -476,6 +476,11 @@
       toggleAdjustCenter();
     }
 
+    if (btnExportFloorplan) {
+      btnExportFloorplan.innerText = 'Đang tạo...';
+      btnExportFloorplan.disabled = true;
+    }
+
     // Capture the image and overlay element directly
     html2canvas(floorplanContainer, {
       scale: 2,
@@ -483,17 +488,29 @@
       logging: false,
       scrollX: 0,
       scrollY: 0
-    }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = 'tinhban_banve.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+    }).then(async canvas => {
+      if (window.saveOrShareImage) {
+        await window.saveOrShareImage(canvas, 'tinhban_banve.png', 'Bản Vẽ Tinh Bàn Phong Thủy');
+      } else {
+        const link = document.createElement('a');
+        link.download = 'tinhban_banve.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      }
       
       if (wasAdjusting) {
         toggleAdjustCenter();
       }
+      if (btnExportFloorplan) {
+        btnExportFloorplan.innerText = '💾 Tải Ảnh';
+        btnExportFloorplan.disabled = false;
+      }
     }).catch(err => {
       console.error('FloorPlan: Error exporting floorplan:', err);
+      if (btnExportFloorplan) {
+        btnExportFloorplan.innerText = '💾 Tải Ảnh';
+        btnExportFloorplan.disabled = false;
+      }
     });
   }
 
