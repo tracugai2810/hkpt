@@ -133,8 +133,8 @@
   }
 
   /**
-   * Renders the La Bàn (compass) to the given canvas with clean modern styling
-   * and connecting lines extending all the way into the center (tận tâm la bàn).
+   * Renders the La Bàn (compass) to the given canvas with high contrast,
+   * bold sharp text, clear degree numbers, and connecting rays to center (0, 0).
    */
   function render(canvas, facingDegree, facingPalace, options) {
     options = options || {};
@@ -161,77 +161,77 @@
     ctx.rotate(rotDeg * Math.PI / 180);
     ctx.translate(-cx, -cy);
 
-    // Radii in scaled units matching the reference visual style
+    // Radii in scaled units
     const R_OUTER = 290 * s;
     const R_TICK_OUT = 288 * s;
-    const R_TICK_IN_MINOR = 282 * s;
-    const R_TICK_IN_MAJOR = 276 * s;
-    const R_DEG_TEXT = 264 * s;
-    const R_RING_1 = 252 * s;
-    const R_MTN_TEXT = 230 * s;
-    const R_RING_2 = 208 * s;
-    const R_DIR_TEXT = 186 * s;
-    const R_RING_3 = 164 * s;
+    const R_TICK_IN_MINOR = 280 * s;
+    const R_TICK_IN_MAJOR = 274 * s;
+    const R_DEG_TEXT = 262 * s;
+    const R_RING_1 = 250 * s;
+    const R_MTN_TEXT = 228 * s;
+    const R_RING_2 = 206 * s;
+    const R_DIR_TEXT = 184 * s;
+    const R_RING_3 = 162 * s;
 
-    // 5. Subtle concentric guide circles (clean modern look)
-    drawCircle(ctx, cx, cy, R_TICK_OUT, 'rgba(220, 38, 38, 0.35)', 1 * s);
-    drawCircle(ctx, cx, cy, R_RING_1, 'rgba(220, 38, 38, 0.2)', 0.8 * s, [4 * s, 4 * s]);
-    drawCircle(ctx, cx, cy, R_RING_2, 'rgba(220, 38, 38, 0.2)', 0.8 * s, [4 * s, 4 * s]);
-    drawCircle(ctx, cx, cy, R_RING_3, 'rgba(220, 38, 38, 0.25)', 0.8 * s);
+    // 5. Bold, high-contrast concentric guide circles
+    drawCircle(ctx, cx, cy, R_TICK_OUT, '#dc2626', 1.8 * s);
+    drawCircle(ctx, cx, cy, R_RING_1, 'rgba(220, 38, 38, 0.65)', 1.2 * s, [5 * s, 4 * s]);
+    drawCircle(ctx, cx, cy, R_RING_2, 'rgba(220, 38, 38, 0.65)', 1.2 * s, [5 * s, 4 * s]);
+    drawCircle(ctx, cx, cy, R_RING_3, 'rgba(220, 38, 38, 0.8)', 1.5 * s);
 
     // 6. Connecting radial lines extending ALL THE WAY TO THE VERY CENTER (tận tâm 0,0)
     if (showGuideLines) {
       // 24 Mountains rays: connecting from center (0) out to R_TICK_OUT
       for (let i = 0; i < 24; i++) {
         const boundDeg = i * 15 - 7.5;
-        drawRadialLine(ctx, cx, cy, 0, R_TICK_OUT, boundDeg, 'rgba(220, 38, 38, 0.22)', 0.7 * s, [3 * s, 3 * s]);
+        drawRadialLine(ctx, cx, cy, 0, R_TICK_OUT, boundDeg, 'rgba(220, 38, 38, 0.55)', 1.1 * s, [4 * s, 3 * s]);
       }
 
-      // 8 Palaces boundary rays: connecting from center (0) out to R_OUTER in solid light red
+      // 8 Palaces boundary rays: connecting from center (0) out to R_OUTER in solid bold red
       for (let i = 0; i < 8; i++) {
         const boundDeg = i * 45 + 22.5;
-        drawRadialLine(ctx, cx, cy, 0, R_OUTER, boundDeg, 'rgba(220, 38, 38, 0.5)', 1.2 * s);
-        drawArrowhead(ctx, cx, cy, R_OUTER - 2 * s, boundDeg, 9 * s, '#dc2626');
+        drawRadialLine(ctx, cx, cy, 0, R_OUTER, boundDeg, '#dc2626', 2.0 * s);
+        drawArrowhead(ctx, cx, cy, R_OUTER - 2 * s, boundDeg, 12 * s, '#dc2626');
       }
 
       // 8 Direction center rays: from center (0) out to R_RING_1
       for (let i = 0; i < 8; i++) {
         const dirDeg = DIRECTIONS_8[i].center;
-        drawRadialLine(ctx, cx, cy, 0, R_RING_1, dirDeg, 'rgba(220, 38, 38, 0.35)', 1 * s, [4 * s, 4 * s]);
+        drawRadialLine(ctx, cx, cy, 0, R_RING_1, dirDeg, '#b91c1c', 1.6 * s, [6 * s, 4 * s]);
       }
     }
 
-    // 7. Degree ticks (every 5°, numbers every 10°)
+    // 7. Degree ticks (every 5°, numbers every 10°) - BOLD & HIGH CONTRAST
     for (let d = 0; d < 360; d++) {
       if (d % 5 === 0) {
         const isMajor = d % 10 === 0;
         const tickInR = isMajor ? R_TICK_IN_MAJOR : R_TICK_IN_MINOR;
         const isCardinal = (d === 0 || d === 90 || d === 180 || d === 270);
-        const tickColor = isCardinal ? '#dc2626' : 'rgba(220, 38, 38, 0.5)';
-        const tickWidth = isMajor ? 1.4 * s : 0.7 * s;
+        const tickColor = isCardinal ? '#dc2626' : (isMajor ? '#000000' : '#dc2626');
+        const tickWidth = isMajor ? 2.0 * s : 1.2 * s;
         drawRadialLine(ctx, cx, cy, R_TICK_OUT, tickInR, d, tickColor, tickWidth);
 
         if (isMajor) {
-          const textColor = isCardinal ? '#dc2626' : '#64748b';
+          const textColor = isCardinal ? '#dc2626' : '#000000';
           const font = isCardinal 
-            ? `bold ${Math.round(9 * s)}px "Inter", "Noto Sans", sans-serif`
-            : `${Math.round(8 * s)}px "Inter", "Noto Sans", sans-serif`;
+            ? `900 ${Math.round(11 * s)}px "Inter", "Noto Sans", sans-serif`
+            : `bold ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
           drawText(ctx, cx, cy, R_DEG_TEXT, d, d.toString(), font, textColor);
         }
       }
     }
 
-    // 8. 24 Mountains text
+    // 8. 24 Mountains text - BOLD SOLID BLACK
     for (let i = 0; i < 24; i++) {
       const mtn = MOUNTAINS_24[i];
-      const font = `500 ${Math.round(10 * s)}px "Noto Sans", "Inter", sans-serif`;
-      drawText(ctx, cx, cy, R_MTN_TEXT, mtn.center, mtn.name, font, '#475569');
+      const font = `bold ${Math.round(12 * s)}px "Noto Sans", "Inter", sans-serif`;
+      drawText(ctx, cx, cy, R_MTN_TEXT, mtn.center, mtn.name, font, '#000000');
     }
 
-    // 9. 8 Directions text (bold red)
+    // 9. 8 Directions text - BOLD VIVID RED
     for (let i = 0; i < 8; i++) {
       const dir = DIRECTIONS_8[i];
-      const font = `800 ${Math.round(13 * s)}px "Inter", "Noto Sans", sans-serif`;
+      const font = `900 ${Math.round(16 * s)}px "Inter", "Noto Sans", sans-serif`;
       drawText(ctx, cx, cy, R_DIR_TEXT, dir.center, dir.name, font, '#dc2626');
     }
 
@@ -239,9 +239,9 @@
     if (showGuideLines) {
       const sittingDegree = (facingDegree + 180) % 360;
 
-      // HƯỚNG (Facing) - Bold Red ray into center
-      drawRadialLine(ctx, cx, cy, 0, R_OUTER + 10 * s, facingDegree, '#dc2626', 2.8 * s);
-      drawArrowhead(ctx, cx, cy, R_OUTER + 12 * s, facingDegree, 16 * s, '#dc2626');
+      // HƯỚNG (Facing) - Heavy Red ray into center
+      drawRadialLine(ctx, cx, cy, 0, R_OUTER + 12 * s, facingDegree, '#dc2626', 3.8 * s);
+      drawArrowhead(ctx, cx, cy, R_OUTER + 14 * s, facingDegree, 18 * s, '#dc2626');
 
       // HƯỚNG badge
       const huongPos = getXY(cx, cy, R_OUTER - 26 * s, facingDegree);
@@ -249,29 +249,29 @@
       ctx.translate(huongPos.x, huongPos.y);
       ctx.fillStyle = '#dc2626';
       ctx.beginPath();
-      ctx.roundRect(-22 * s, -8 * s, 44 * s, 16 * s, 4 * s);
+      ctx.roundRect(-24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(8.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('HƯỚNG', 0, 0);
       ctx.restore();
 
-      // TỌA (Sitting) - Bold Blue ray into center (màu khác phân biệt)
-      drawRadialLine(ctx, cx, cy, 0, R_OUTER + 10 * s, sittingDegree, '#2563eb', 2.8 * s);
-      drawArrowhead(ctx, cx, cy, R_OUTER + 12 * s, sittingDegree, 16 * s, '#2563eb');
+      // TỌA (Sitting) - Heavy Blue ray into center (màu khác phân biệt)
+      drawRadialLine(ctx, cx, cy, 0, R_OUTER + 12 * s, sittingDegree, '#1d4ed8', 3.8 * s);
+      drawArrowhead(ctx, cx, cy, R_OUTER + 14 * s, sittingDegree, 18 * s, '#1d4ed8');
 
       // TỌA badge
       const toaPos = getXY(cx, cy, R_OUTER - 26 * s, sittingDegree);
       ctx.save();
       ctx.translate(toaPos.x, toaPos.y);
-      ctx.fillStyle = '#2563eb';
+      ctx.fillStyle = '#1d4ed8';
       ctx.beginPath();
-      ctx.roundRect(-18 * s, -8 * s, 36 * s, 16 * s, 4 * s);
+      ctx.roundRect(-20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(8.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('TỌA', 0, 0);

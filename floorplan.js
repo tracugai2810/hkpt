@@ -101,10 +101,7 @@
     // 6. Transparent BG checkbox
     if (transparentBgCheckbox) {
       transparentBgCheckbox.addEventListener('change', function() {
-        const clonedGrid = document.getElementById('clonedGrid');
-        if (clonedGrid) {
-          clonedGrid.style.background = this.checked ? 'transparent' : 'rgba(255, 255, 255, 0.85)';
-        }
+        updateTransparentState();
       });
     }
 
@@ -272,13 +269,31 @@
       floorplanGrid.innerHTML = '';
       const clone = chartGrid.cloneNode(true);
       clone.id = 'clonedGrid';
-      const isTransparent = transparentBgCheckbox && transparentBgCheckbox.checked;
-      clone.style.background = isTransparent ? 'transparent' : 'rgba(255, 255, 255, 0.85)';
       floorplanGrid.appendChild(clone);
+      updateTransparentState();
     }
 
     calculateCenterPx();
     updateOverlayPosition();
+  }
+
+  function updateTransparentState() {
+    const isTransparent = transparentBgCheckbox && transparentBgCheckbox.checked;
+    if (floorplanGrid) {
+      if (isTransparent) {
+        floorplanGrid.classList.add('transparent-bg');
+      } else {
+        floorplanGrid.classList.remove('transparent-bg');
+      }
+      const clonedGrid = document.getElementById('clonedGrid');
+      if (clonedGrid) {
+        clonedGrid.style.background = isTransparent ? 'transparent' : 'rgba(255, 255, 255, 0.85)';
+        const cells = clonedGrid.querySelectorAll('.chart-cell, .center-cell');
+        cells.forEach(cell => {
+          cell.style.background = isTransparent ? 'transparent' : '';
+        });
+      }
+    }
   }
 
   function updateOverlayPosition() {
