@@ -45,7 +45,7 @@
 
   /**
    * Converts a compass degree to a canvas API angle (in radians).
-   * 0° (North) is at BOTTOM, 90° (East) at LEFT.
+   * 0° (North) is at BOTTOM, 90° (East) at LEFT, 180° (South) at TOP, 270° (West) at RIGHT.
    */
   function compassToCanvasAngle(compassDeg) {
     return (compassDeg + 90) * Math.PI / 180;
@@ -120,9 +120,37 @@
   }
 
   /**
-   * Renders the La Bàn (compass) to the given canvas.
+   * Draws an arrowhead pointing radially outward along the given compass degree.
    */
-  function render(canvas, facingDegree, facingPalace) {
+  function drawArrowhead(ctx, cx, cy, radius, compassDeg, size, color) {
+    const pos = getXY(cx, cy, radius, compassDeg);
+    const angle = compassToCanvasAngle(compassDeg);
+    
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size, -size * 0.45);
+    ctx.lineTo(-size * 0.65, 0);
+    ctx.lineTo(-size, size * 0.45);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /**
+   * Renders the La Bàn (compass) to the given canvas.
+   * @param {HTMLCanvasElement} canvas
+   * @param {number} facingDegree
+   * @param {number} facingPalace
+   * @param {Object} options - { showGuideLines: boolean }
+   */
+  function render(canvas, facingDegree, facingPalace, options) {
+    options = options || {};
+    const showGuideLines = options.showGuideLines !== false;
+
     // 1. Set canvas resolution to 1000x1000
     canvas.width = 1000;
     canvas.height = 1000;
@@ -153,14 +181,12 @@
     const R_MTN_OUT = 258 * s;
     const R_MTN_TEXT = 237 * s;
     const R_MTN_IN = 216 * s;
-    const R_DIR_OUT = 216 * s; // same as R_MTN_IN
+    const R_DIR_OUT = 216 * s;
     const R_DIR_TEXT = 198 * s;
     const R_DIR_IN = 180 * s;
-    const R_LINE_IN = 125 * s;
+    const R_LINE_IN = 120 * s;
 
-    // 5. Draw everything in the rotated context
-    
-    // Background bands
+    // 5. Background bands
     drawBand(ctx, cx, cy, R_OUTER, R_MTN_OUT, '#f5ead0');
     drawBand(ctx, cx, cy, R_MTN_OUT, R_MTN_IN, '#faf0dc');
     drawBand(ctx, cx, cy, R_DIR_OUT, R_DIR_IN, '#f0e4ca');
@@ -187,7 +213,7 @@
         drawRadialLine(ctx, cx, cy, R_TICK_OUT, tickInR, d, tickColor, tickWidth);
 
         if (isMajor) {
-          const textColor = d === 0 ? '#CC0000' : '#333';
+          const textColor = (d === 0 || d === 90 || d === 180 || d === 270) ? '#CC0000' : '#333';
           const font = `${Math.round(8 * s)}px "Inter", "Noto Sans", sans-serif`;
           drawText(ctx, cx, cy, R_DEG_TEXT, d, d.toString(), font, textColor);
         }
@@ -224,30 +250,88 @@
       }
     }
 
-    // 6. Restore to original non-rotated context
+    // 6. Optional Extended Direction Guide Lines & Arrows (Trục & Tia phân cung)
+    if (showGuideLines) {
+      // 8 Sector Division Lines (22.5, 67.5, 112.5...) with outer arrows
+      for (let i = 0; i < 8; i++) {
+        const boundDeg = i * 45 + 22.5;
+        // Radial ray from inner grid out to outer ring
+        drawRadialLine(ctx, cx, cy, R_LINE_IN, R_OUTER, boundDeg, 'rgba(220, 38, 38, 0.45)', 1.2 * s, [4 * s, 4 * s]);
+        drawArrowhead(ctx, cx, cy, R_OUTER - 2 * s, boundDeg, 10 * s, '#dc2626');
+      }
+
+      // 8 Cardinal/Ordinal Center Axis Lines
+      for (let i = 0; i < 8; i++) {
+        const dirDeg = DIRECTIONS_8[i].center;
+        drawRadialLine(ctx, cx, cy, R_LINE_IN, R_OUTER, dirDeg, 'rgba(37, 99, 235, 0.35)', 1 * s, [5 * s, 5 * s]);
+      }
+
+      // Special Prominent Axis: HƯỚNG (Facing) - Red
+      const sittingDegree = (facingDegree + 180) % 360;
+
+      // Draw HƯỚNG Line & Arrow
+      drawRadialLine(ctx, cx, cy, R_LINE_IN, R_OUTER + 10 * s, facingDegree, '#dc2626', 2.8 * s);
+      drawArrowhead(ctx, cx, cy, R_OUTER + 12 * s, facingDegree, 16 * s, '#dc2626');
+
+      // Draw HƯỚNG Label Badge
+      const huongPos = getXY(cx, cy, R_OUTER - 26 * s, facingDegree);
+      ctx.save();
+      ctx.translate(huongPos.x, huongPos.y);
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.roundRect(-22 * s, -8 * s, 44 * s, 16 * s, 4 * s);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${Math.round(8.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('HƯỚNG', 0, 0);
+      ctx.restore();
+
+      // Draw TỌA Line & Arrow - Blue (Màu khác)
+      drawRadialLine(ctx, cx, cy, R_LINE_IN, R_OUTER + 10 * s, sittingDegree, '#2563eb', 2.8 * s);
+      drawArrowhead(ctx, cx, cy, R_OUTER + 12 * s, sittingDegree, 16 * s, '#2563eb');
+
+      // Draw TỌA Label Badge
+      const toaPos = getXY(cx, cy, R_OUTER - 26 * s, sittingDegree);
+      ctx.save();
+      ctx.translate(toaPos.x, toaPos.y);
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath();
+      ctx.roundRect(-18 * s, -8 * s, 36 * s, 16 * s, 4 * s);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${Math.round(8.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TỌA', 0, 0);
+      ctx.restore();
+    }
+
+    // 7. Restore to original non-rotated context
     ctx.restore();
 
-    // 7. Draw facing indicator (red arrow)
-    // Re-apply the same rotation to orient the arrow relative to the compass rings,
-    // then draw it at the exact facingDegree.
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(rotDeg * Math.PI / 180);
-    ctx.translate(-cx, -cy);
+    // 8. Outer indicator triangle (if guide lines are not showing, keep standard outer arrow)
+    if (!showGuideLines) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotDeg * Math.PI / 180);
+      ctx.translate(-cx, -cy);
 
-    const tip = getXY(cx, cy, R_OUTER + 2 * s, facingDegree);
-    const baseL = getXY(cx, cy, R_OUTER + 14 * s, facingDegree - 2.5);
-    const baseR = getXY(cx, cy, R_OUTER + 14 * s, facingDegree + 2.5);
+      const tip = getXY(cx, cy, R_OUTER + 2 * s, facingDegree);
+      const baseL = getXY(cx, cy, R_OUTER + 14 * s, facingDegree - 2.5);
+      const baseR = getXY(cx, cy, R_OUTER + 14 * s, facingDegree + 2.5);
 
-    ctx.beginPath();
-    ctx.moveTo(tip.x, tip.y);
-    ctx.lineTo(baseL.x, baseL.y);
-    ctx.lineTo(baseR.x, baseR.y);
-    ctx.closePath();
-    ctx.fillStyle = '#CC0000';
-    ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(tip.x, tip.y);
+      ctx.lineTo(baseL.x, baseL.y);
+      ctx.lineTo(baseR.x, baseR.y);
+      ctx.closePath();
+      ctx.fillStyle = '#CC0000';
+      ctx.fill();
 
-    ctx.restore();
+      ctx.restore();
+    }
   }
 
   // Expose module functionality

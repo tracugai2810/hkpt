@@ -4,15 +4,23 @@
   // State variables
   let isInitialized = false;
   let currentRotation = 0; // degrees
-  let centerX = 0; // center position relative to container
+  let normalizedCenterX = 0.5; // ratio [0, 1] relative to image
+  let normalizedCenterY = 0.5;
+  let centerX = 0; // px relative to image
   let centerY = 0;
   let isDragging = false;
-  let isResizing = false;
   let isMovingCenter = false;
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let scrollStartX = 0;
+  let scrollStartY = 0;
   let startAngle = 0;
   let isAdjustingCenter = false;
   let overlaySize = 240; // px
   let overlayOpacity = 0.7;
+  let imageZoom = 100; // percent (50 - 300)
+  let showGuideLines = true;
 
   // Touch tracking for pinch-to-zoom & two-finger rotate
   let touchStartDist = 0;
@@ -23,8 +31,9 @@
   // DOM Elements
   let btnUploadPlan, floorplanFileInput, floorplanSection, floorplanContainer;
   let floorplanImage, floorplanOverlay, floorplanCompass, floorplanGrid;
-  let floorplanResizeHandle, centerMarker, sizeSlider, opacitySlider, rotationDisplay;
-  let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, transparentBgCheckbox;
+  let centerMarker, sizeSlider, imageZoomSlider, opacitySlider, rotationDisplay;
+  let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan;
+  let transparentBgCheckbox, guideLinesCheckbox;
 
   function init() {
     if (isInitialized) return;
@@ -38,11 +47,12 @@
     floorplanOverlay = document.getElementById('floorplanOverlay');
     floorplanCompass = document.getElementById('floorplanCompass');
     floorplanGrid = document.getElementById('floorplanGrid');
-    floorplanResizeHandle = document.getElementById('floorplanResizeHandle');
     centerMarker = document.getElementById('centerMarker');
     sizeSlider = document.getElementById('sizeSlider');
+    imageZoomSlider = document.getElementById('imageZoomSlider');
     opacitySlider = document.getElementById('opacitySlider');
     transparentBgCheckbox = document.getElementById('transparentBgCheckbox');
+    guideLinesCheckbox = document.getElementById('guideLinesCheckbox');
     rotationDisplay = document.getElementById('rotationDisplay');
     btnAdjustCenter = document.getElementById('btnAdjustCenter');
     btnResetFloorplan = document.getElementById('btnResetFloorplan');
@@ -61,7 +71,7 @@
     // 2. File input change
     floorplanFileInput.addEventListener('change', handleFileUpload);
 
-    // 3. Size slider
+    // 3. Star Chart Size slider
     if (sizeSlider) {
       sizeSlider.addEventListener('input', function(e) {
         overlaySize = parseInt(e.target.value, 10);
@@ -69,7 +79,15 @@
       });
     }
 
-    // 4. Opacity slider
+    // 4. Floorplan Image Zoom slider
+    if (imageZoomSlider) {
+      imageZoomSlider.addEventListener('input', function(e) {
+        imageZoom = parseInt(e.target.value, 10);
+        updateImageZoom();
+      });
+    }
+
+    // 5. Opacity slider
     if (opacitySlider) {
       overlayOpacity = parseInt(opacitySlider.value, 10) / 100;
       opacitySlider.addEventListener('input', function(e) {
@@ -80,7 +98,7 @@
       });
     }
 
-    // 4b. Transparent BG checkbox
+    // 6. Transparent BG checkbox
     if (transparentBgCheckbox) {
       transparentBgCheckbox.addEventListener('change', function() {
         const clonedGrid = document.getElementById('clonedGrid');
@@ -90,33 +108,39 @@
       });
     }
 
-    // 5. Adjust center button toggle
+    // 7. Guide lines & Sitting/Facing axis checkbox
+    if (guideLinesCheckbox) {
+      guideLinesCheckbox.addEventListener('change', function() {
+        showGuideLines = this.checked;
+        renderCompass();
+      });
+    }
+
+    // 8. Adjust center button toggle
     if (btnAdjustCenter) {
       btnAdjustCenter.addEventListener('click', toggleAdjustCenter);
     }
 
-    // 6. Reset button
+    // 9. Reset button
     if (btnResetFloorplan) {
       btnResetFloorplan.addEventListener('click', function() {
         currentRotation = 0;
+        imageZoom = 100;
+        if (imageZoomSlider) imageZoomSlider.value = 100;
+        updateImageZoom();
         updateOverlayPosition();
       });
     }
 
-    // 7. Export button
+    // 10. Export button
     if (btnExportFloorplan) {
       btnExportFloorplan.addEventListener('click', exportFloorplan);
     }
 
-    // 8. Mouse Wheel Zoom on floor plan container
+    // 11. Mouse Wheel Zoom on star chart (or on image if Ctrl is held)
     floorplanContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
 
-    // 9. Resize handle drag
-    if (floorplanResizeHandle) {
-      setupResizeHandle();
-    }
-
-    // 10. Core gesture handling (Rotate, Move Center, Pinch Zoom)
+    // 12. Core interaction handlers (Rotate, Move Center, Pinch Zoom, Pan)
     setupInteractionHandlers();
 
     isInitialized = true;
@@ -147,12 +171,13 @@
       img.onload = function() {
         if (floorplanSection) floorplanSection.classList.remove('hidden');
         floorplanImage.src = img.src;
+        imageZoom = 100;
+        if (imageZoomSlider) imageZoomSlider.value = 100;
+        floorplanImage.style.width = '100%';
         
-        // Wait a bit for the image to render in DOM and get actual display dimensions
         setTimeout(() => {
           detectCenter(floorplanImage);
           setupOverlay();
-          // Scroll smoothly to floorplan section
           floorplanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 120);
       };
@@ -180,11 +205,6 @@
       console.warn('Cannot read image data, fallback to geometric center', err);
     }
     
-    let computedCenterX, computedCenterY;
-    const rect = imgElement.getBoundingClientRect();
-    const displayW = rect.width || imgElement.offsetWidth || 400;
-    const displayH = rect.height || imgElement.offsetHeight || 300;
-
     if (imageData) {
       const data = imageData.data;
       let minX = naturalW, maxX = 0, minY = naturalH, maxY = 0;
@@ -208,28 +228,39 @@
       }
       
       if (foundDark && maxX > minX && maxY > minY) {
-        const centerNaturalX = (minX + maxX) / 2;
-        const centerNaturalY = (minY + maxY) / 2;
-        computedCenterX = (centerNaturalX / naturalW) * displayW;
-        computedCenterY = (centerNaturalY / naturalH) * displayH;
+        normalizedCenterX = ((minX + maxX) / 2) / naturalW;
+        normalizedCenterY = ((minY + maxY) / 2) / naturalH;
       } else {
-        computedCenterX = displayW / 2;
-        computedCenterY = displayH / 2;
+        normalizedCenterX = 0.5;
+        normalizedCenterY = 0.5;
       }
     } else {
-      computedCenterX = displayW / 2;
-      computedCenterY = displayH / 2;
+      normalizedCenterX = 0.5;
+      normalizedCenterY = 0.5;
     }
     
-    centerX = computedCenterX;
-    centerY = computedCenterY;
-    
-    // Center marker only visible during adjustment
+    calculateCenterPx();
     if (centerMarker) {
       centerMarker.style.display = isAdjustingCenter ? 'block' : 'none';
     }
-    
     currentRotation = 0;
+  }
+
+  function calculateCenterPx() {
+    const curW = floorplanImage.offsetWidth || floorplanImage.width || 400;
+    const curH = floorplanImage.offsetHeight || floorplanImage.height || 300;
+    centerX = normalizedCenterX * curW;
+    centerY = normalizedCenterY * curH;
+  }
+
+  function updateImageZoom() {
+    if (!floorplanImage) return;
+    floorplanImage.style.width = imageZoom + '%';
+    floorplanImage.style.maxWidth = 'none';
+    
+    // Recalculate pixel center position anchored to normalized coordinates
+    calculateCenterPx();
+    updateOverlayPosition();
   }
 
   function setupOverlay() {
@@ -246,6 +277,7 @@
       floorplanGrid.appendChild(clone);
     }
 
+    calculateCenterPx();
     updateOverlayPosition();
   }
 
@@ -291,7 +323,9 @@
       }
     }
     
-    window.Compass.render(floorplanCompass, facingDegree, facingPalace);
+    window.Compass.render(floorplanCompass, facingDegree, facingPalace, {
+      showGuideLines: showGuideLines
+    });
   }
 
   function setOverlaySize(newSize) {
@@ -301,73 +335,46 @@
 
   function handleWheelZoom(e) {
     e.preventDefault();
-    const zoomDelta = e.deltaY < 0 ? 15 : -15;
-    setOverlaySize(overlaySize + zoomDelta);
-  }
-
-  function setupResizeHandle() {
-    const onHandleDown = function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      isResizing = true;
-
-      const getDistance = function(evt) {
-        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-        const rect = floorplanContainer.getBoundingClientRect();
-        const mouseX = clientX - rect.left;
-        const mouseY = clientY - rect.top;
-        return Math.hypot(mouseX - centerX, mouseY - centerY);
-      };
-
-      const onHandleMove = function(evt) {
-        if (!isResizing) return;
-        const dist = getDistance(evt);
-        // Radius to square dimension
-        const newSize = dist * 2;
-        setOverlaySize(newSize);
-      };
-
-      const onHandleUp = function() {
-        isResizing = false;
-        document.removeEventListener('mousemove', onHandleMove);
-        document.removeEventListener('mouseup', onHandleUp);
-        document.removeEventListener('touchmove', onHandleMove);
-        document.removeEventListener('touchend', onHandleUp);
-      };
-
-      document.addEventListener('mousemove', onHandleMove);
-      document.addEventListener('mouseup', onHandleUp);
-      document.addEventListener('touchmove', onHandleMove, { passive: false });
-      document.addEventListener('touchend', onHandleUp);
-    };
-
-    floorplanResizeHandle.addEventListener('mousedown', onHandleDown);
-    floorplanResizeHandle.addEventListener('touchstart', onHandleDown, { passive: false });
+    if (e.ctrlKey) {
+      // Ctrl + Wheel: Zoom floorplan image
+      imageZoom = Math.max(50, Math.min(300, imageZoom + (e.deltaY < 0 ? 10 : -10)));
+      if (imageZoomSlider) imageZoomSlider.value = imageZoom;
+      updateImageZoom();
+    } else {
+      // Normal Wheel: Zoom star chart
+      const zoomDelta = e.deltaY < 0 ? 15 : -15;
+      setOverlaySize(overlaySize + zoomDelta);
+    }
   }
 
   function getAngleFromCenter(clientX, clientY) {
-    const rect = floorplanContainer.getBoundingClientRect();
-    const x = clientX - rect.left - centerX;
-    const y = clientY - rect.top - centerY;
+    const imgRect = floorplanImage.getBoundingClientRect();
+    const x = clientX - imgRect.left - centerX;
+    const y = clientY - imgRect.top - centerY;
     return Math.atan2(y, x) * 180 / Math.PI;
   }
 
   function updateCenterFromEvent(e) {
-    const rect = floorplanContainer.getBoundingClientRect();
+    const imgRect = floorplanImage.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    centerX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    centerY = Math.max(0, Math.min(rect.height, clientY - rect.top));
+    
+    const clickX = clientX - imgRect.left;
+    const clickY = clientY - imgRect.top;
+    
+    const curW = floorplanImage.offsetWidth || 1;
+    const curH = floorplanImage.offsetHeight || 1;
+    
+    normalizedCenterX = Math.max(0, Math.min(1, clickX / curW));
+    normalizedCenterY = Math.max(0, Math.min(1, clickY / curH));
+    
+    calculateCenterPx();
     updateOverlayPosition();
   }
 
   function setupInteractionHandlers() {
-    // Pointer down on container or overlay
     const onStart = function(e) {
-      if (isResizing) return;
-
-      // Handle Pinch to Zoom (2 fingers)
+      // 2-finger touch: Pinch zoom & twist rotation of the star chart
       if (e.touches && e.touches.length === 2) {
         e.preventDefault();
         const t1 = e.touches[0];
@@ -378,6 +385,7 @@
         touchStartRotation = currentRotation;
         isDragging = false;
         isMovingCenter = false;
+        isPanning = false;
         return;
       }
 
@@ -388,14 +396,23 @@
         isMovingCenter = true;
         updateCenterFromEvent(e);
       } else {
-        // Mode 2: Rotating overlay (only if clicking on overlay)
         const target = e.target;
         if (floorplanOverlay.contains(target) || target === floorplanOverlay) {
+          // Mode 2: Rotating star chart
           e.preventDefault();
           isDragging = true;
           const clientX = e.touches ? e.touches[0].clientX : e.clientX;
           const clientY = e.touches ? e.touches[0].clientY : e.clientY;
           startAngle = getAngleFromCenter(clientX, clientY) - currentRotation;
+        } else if (imageZoom > 100) {
+          // Mode 3: Panning zoomed floor plan image
+          isPanning = true;
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          panStartX = clientX;
+          panStartY = clientY;
+          scrollStartX = floorplanContainer.scrollLeft;
+          scrollStartY = floorplanContainer.scrollTop;
         }
       }
     };
@@ -407,42 +424,49 @@
         const t1 = e.touches[0];
         const t2 = e.touches[1];
         
-        // Pinch zoom
         const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
         const scale = currentDist / touchStartDist;
         setOverlaySize(touchStartSize * scale);
 
-        // 2-finger rotation
         const currentAngle = Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * 180 / Math.PI;
         currentRotation = touchStartRotation + (currentAngle - touchStartAngle);
         updateOverlayPosition();
         return;
       }
 
-      // Center moving mode
+      // Moving center mode
       if (isMovingCenter && isAdjustingCenter) {
         e.preventDefault();
         updateCenterFromEvent(e);
         return;
       }
 
-      // Single-finger / mouse rotation drag
+      // Rotating overlay mode
       if (isDragging) {
         e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         currentRotation = getAngleFromCenter(clientX, clientY) - startAngle;
         updateOverlayPosition();
+        return;
+      }
+
+      // Panning container mode
+      if (isPanning) {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        floorplanContainer.scrollLeft = scrollStartX - (clientX - panStartX);
+        floorplanContainer.scrollTop = scrollStartY - (clientY - panStartY);
       }
     };
 
     const onEnd = function() {
       isDragging = false;
       isMovingCenter = false;
+      isPanning = false;
       touchStartDist = 0;
     };
 
-    // Attach listeners
     floorplanContainer.addEventListener('mousedown', onStart);
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onEnd);
@@ -459,31 +483,29 @@
       return;
     }
 
-    // Hide adjustment UI during export
     const wasAdjusting = isAdjustingCenter;
     if (isAdjustingCenter) {
       toggleAdjustCenter();
     }
-    if (floorplanResizeHandle) floorplanResizeHandle.style.display = 'none';
 
+    // Capture the image and overlay element directly
     html2canvas(floorplanContainer, {
       scale: 2,
       useCORS: true,
-      logging: false
+      logging: false,
+      scrollX: 0,
+      scrollY: 0
     }).then(canvas => {
       const link = document.createElement('a');
       link.download = 'tinhban_banve.png';
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       
-      // Restore state
       if (wasAdjusting) {
         toggleAdjustCenter();
       }
-      if (floorplanResizeHandle) floorplanResizeHandle.style.display = '';
     }).catch(err => {
       console.error('FloorPlan: Error exporting floorplan:', err);
-      if (floorplanResizeHandle) floorplanResizeHandle.style.display = '';
     });
   }
 

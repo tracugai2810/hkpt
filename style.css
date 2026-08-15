@@ -822,11 +822,19 @@ select.input-field {
   position: relative;
   width: 100%;
   min-height: 300px;
+  max-height: 540px;
   background: #f8fafc;
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow: auto;
   cursor: default;
+}
+
+.floorplan-wrapper {
+  position: relative;
+  width: fit-content;
+  min-width: 100%;
+  margin: 0 auto;
 }
 
 .floorplan-image {
@@ -895,31 +903,16 @@ select.input-field {
   font-size: 0.5rem;
 }
 
-.floorplan-resize-handle {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 28px;
-  height: 28px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 50%;
+.fp-toggles-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: nwse-resize;
-  z-index: 15;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  transform: translate(25%, 25%);
-  user-select: none;
-  touch-action: none;
-}
-
-.floorplan-resize-handle:hover {
-  background: var(--accent-dark);
-  transform: translate(25%, 25%) scale(1.15);
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-input);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
 }
 
 .floorplan-container.adjusting-center {
