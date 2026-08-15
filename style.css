@@ -439,24 +439,52 @@ select.input-field {
 
 /* Star numbers */
 .star-son {
-  font-size: 1.3rem;
-  font-weight: 950;
-  color: #000;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #1a1a1a;
   line-height: 1;
+  background: #facc15;
+  padding: 2px 5px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .star-huong {
-  font-size: 1.3rem;
-  font-weight: 950;
-  color: #000;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #ffffff;
   line-height: 1;
+  background: #dc2626;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .star-van {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 950;
-  color: #3b82f6;
+  color: #0f172a;
   line-height: 1;
+}
+
+.compass-grid-overlay .star-son {
+  font-size: 0.95rem;
+  padding: 1px 4px;
+}
+
+.compass-grid-overlay .star-huong {
+  font-size: 0.95rem;
+  width: 20px;
+  height: 20px;
+}
+
+.compass-grid-overlay .star-van {
+  font-size: 1.35rem;
 }
 
 .star-nguyet {
