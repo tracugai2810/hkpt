@@ -797,6 +797,15 @@ select.input-field {
   transform: translateX(-50%) translateY(-10px);
 }
 
+/* When floorplan section is active, expand container on desktop for wide workspace */
+@media (min-width: 768px) {
+  body.has-floorplan .app-container,
+  .app-container.has-floorplan {
+    max-width: min(1380px, 95vw);
+    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
 /* ============================================================
    Floor Plan Overlay Styles
    ============================================================ */
@@ -808,20 +817,77 @@ select.input-field {
   border: 1px solid var(--border-color);
   margin-top: 20px;
   animation: fadeIn 0.4s ease;
+  transition: all 0.3s ease;
+}
+
+.floorplan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
 }
 
 .floorplan-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 14px;
-  text-align: center;
+  margin: 0;
+  text-align: left;
+}
+
+.fp-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.fp-header-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  border-color: var(--accent);
+}
+
+/* Fullscreen Immersion Mode */
+.floorplan-section.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 99999;
+  margin: 0;
+  border-radius: 0;
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  box-shadow: none;
+  border: none;
+  overflow: hidden;
+}
+
+.floorplan-section.fullscreen-mode .floorplan-container {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+  height: 100%;
 }
 
 .floorplan-container {
   position: relative;
   width: 100%;
-  min-height: 300px;
+  min-height: 380px;
   max-height: 80vh;
   max-height: 80dvh;
   background: #f8fafc;
@@ -849,6 +915,16 @@ select.input-field {
   -webkit-user-drag: none;
 }
 
+.floorplan-helper-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9;
+}
+
 .floorplan-overlay {
   position: absolute;
   pointer-events: auto;
@@ -868,6 +944,83 @@ select.input-field {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+/* Center Tools Specialized Panel */
+.center-tools-panel {
+  background: #f0fdfa;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-top: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.center-tools-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.center-tools-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.center-mode-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.center-mode-btn {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid #99f6e4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.center-mode-btn:hover {
+  background: #ccfbf1;
+  border-color: #5eead4;
+}
+
+.center-mode-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent-dark);
+  box-shadow: 0 1px 4px rgba(42,157,143,0.3);
+}
+
+.center-tool-desc {
+  font-size: 0.82rem;
+  color: #134e4a;
+  line-height: 1.45;
+  background: rgba(255,255,255,0.7);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.center-poly-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.fp-btn-sm {
+  padding: 5px 10px;
+  font-size: 0.75rem;
 }
 
 .fp-toggles-row {
@@ -892,8 +1045,8 @@ select.input-field {
 
 .center-marker {
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border: 2px solid #ef4444;
   border-radius: 50%;
   background: rgba(239, 68, 68, 0.4);
@@ -901,7 +1054,7 @@ select.input-field {
   pointer-events: none;
   z-index: 25;
   display: none;
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.8);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 12px rgba(239,68,68,0.6);
 }
 
 .center-marker::before,
@@ -913,14 +1066,14 @@ select.input-field {
 
 .center-marker::before {
   width: 2px;
-  height: 28px;
+  height: 36px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
 .center-marker::after {
-  width: 28px;
+  width: 36px;
   height: 2px;
   top: 50%;
   left: 50%;

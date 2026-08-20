@@ -21,6 +21,12 @@
   let overlayOpacity = 0.7;
   let imageZoom = 100; // percent (50 - 300)
   let showGuideLines = true;
+  let isFullscreen = false;
+
+  // Centering modes: 'free' | 'box' | 'polygon' | 'auto'
+  let centerMode = 'free';
+  let boxPoints = []; // [{x, y}] normalized ratios (max 2 points)
+  let polygonPoints = []; // [{x, y}] normalized ratios
 
   // Touch tracking for pinch-to-zoom & two-finger rotate
   let touchStartDist = 0;
@@ -30,10 +36,13 @@
 
   // DOM Elements
   let btnUploadPlan, floorplanFileInput, floorplanSection, floorplanContainer;
-  let floorplanImage, floorplanOverlay, floorplanCompass, floorplanGrid;
+  let floorplanImage, floorplanHelperCanvas, floorplanOverlay, floorplanCompass;
   let centerMarker, sizeSlider, imageZoomSlider, opacitySlider, rotationDisplay;
-  let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan;
+  let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, btnToggleFullscreen;
   let transparentBgCheckbox, guideLinesCheckbox;
+  let centerToolsPanel, centerToolDesc, centerPolyActions;
+  let btnModeFree, btnModeBox, btnModePolygon, btnModeAuto;
+  let btnPolyDone, btnPolyUndo, btnPolyClear;
 
   function init() {
     if (isInitialized) return;
@@ -44,9 +53,9 @@
     floorplanSection = document.getElementById('floorplanSection');
     floorplanContainer = document.getElementById('floorplanContainer');
     floorplanImage = document.getElementById('floorplanImage');
+    floorplanHelperCanvas = document.getElementById('floorplanHelperCanvas');
     floorplanOverlay = document.getElementById('floorplanOverlay');
     floorplanCompass = document.getElementById('floorplanCompass');
-    floorplanGrid = document.getElementById('floorplanGrid');
     centerMarker = document.getElementById('centerMarker');
     sizeSlider = document.getElementById('sizeSlider');
     imageZoomSlider = document.getElementById('imageZoomSlider');
@@ -57,6 +66,19 @@
     btnAdjustCenter = document.getElementById('btnAdjustCenter');
     btnResetFloorplan = document.getElementById('btnResetFloorplan');
     btnExportFloorplan = document.getElementById('btnExportFloorplan');
+    btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
+
+    // Center Tools elements
+    centerToolsPanel = document.getElementById('centerToolsPanel');
+    centerToolDesc = document.getElementById('centerToolDesc');
+    centerPolyActions = document.getElementById('centerPolyActions');
+    btnModeFree = document.getElementById('btnModeFree');
+    btnModeBox = document.getElementById('btnModeBox');
+    btnModePolygon = document.getElementById('btnModePolygon');
+    btnModeAuto = document.getElementById('btnModeAuto');
+    btnPolyDone = document.getElementById('btnPolyDone');
+    btnPolyUndo = document.getElementById('btnPolyUndo');
+    btnPolyClear = document.getElementById('btnPolyClear');
 
     if (!btnUploadPlan || !floorplanFileInput || !floorplanImage || !floorplanContainer) {
       console.warn('FloorPlan: Missing required DOM elements');
@@ -123,9 +145,12 @@
       btnResetFloorplan.addEventListener('click', function() {
         currentRotation = 0;
         imageZoom = 100;
+        boxPoints = [];
+        polygonPoints = [];
         if (imageZoomSlider) imageZoomSlider.value = 100;
         updateImageZoom();
         updateOverlayPosition();
+        renderHelperCanvas();
       });
     }
 
@@ -134,13 +159,64 @@
       btnExportFloorplan.addEventListener('click', exportFloorplan);
     }
 
-    // 11. Mouse Wheel Zoom on star chart (or on image if Ctrl is held)
+    // 11. Fullscreen / Wide mode toggle
+    if (btnToggleFullscreen) {
+      btnToggleFullscreen.addEventListener('click', toggleFullscreen);
+    }
+
+    // 12. Center Tool Modes
+    if (btnModeFree) btnModeFree.addEventListener('click', () => switchCenterMode('free'));
+    if (btnModeBox) btnModeBox.addEventListener('click', () => switchCenterMode('box'));
+    if (btnModePolygon) btnModePolygon.addEventListener('click', () => switchCenterMode('polygon'));
+    if (btnModeAuto) btnModeAuto.addEventListener('click', () => {
+      detectCenter(floorplanImage);
+      setupOverlay();
+      switchCenterMode('auto');
+    });
+
+    if (btnPolyDone) btnPolyDone.addEventListener('click', finishPolygon);
+    if (btnPolyUndo) btnPolyUndo.addEventListener('click', undoPolygonPoint);
+    if (btnPolyClear) btnPolyClear.addEventListener('click', clearPolygon);
+
+    // 13. Mouse Wheel Zoom on star chart (or on image if Ctrl is held)
     floorplanContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
 
-    // 12. Core interaction handlers (Rotate, Move Center, Pinch Zoom, Pan)
+    // 14. Core interaction handlers (Rotate, Move Center, Pinch Zoom, Pan)
     setupInteractionHandlers();
 
+    // 15. Window resize listener to keep overlay and canvas aligned
+    window.addEventListener('resize', debounce(() => {
+      calculateCenterPx();
+      updateOverlayPosition();
+      renderHelperCanvas();
+    }, 150));
+
     isInitialized = true;
+  }
+
+  function toggleFullscreen() {
+    isFullscreen = !isFullscreen;
+    if (floorplanSection) {
+      floorplanSection.classList.toggle('fullscreen-mode', isFullscreen);
+    }
+    if (btnToggleFullscreen) {
+      const iconExp = btnToggleFullscreen.querySelector('.icon-expand');
+      const iconComp = btnToggleFullscreen.querySelector('.icon-compress');
+      const btnText = btnToggleFullscreen.querySelector('.btn-text');
+      if (iconExp && iconComp) {
+        iconExp.classList.toggle('hidden', isFullscreen);
+        iconComp.classList.toggle('hidden', !isFullscreen);
+      }
+      if (btnText) {
+        btnText.textContent = isFullscreen ? 'Thu nhỏ' : 'Toàn màn hình';
+      }
+    }
+    setTimeout(() => {
+      calculateCenterPx();
+      updateOverlayPosition();
+      renderHelperCanvas();
+      scrollToCenter();
+    }, 100);
   }
 
   function toggleAdjustCenter() {
@@ -150,12 +226,43 @@
       btnAdjustCenter.classList.add('active');
       floorplanContainer.classList.add('adjusting-center');
       if (centerMarker) centerMarker.style.display = 'block';
+      if (centerToolsPanel) centerToolsPanel.classList.remove('hidden');
+      switchCenterMode(centerMode);
     } else {
       btnAdjustCenter.textContent = '📍 Chỉnh Tâm';
       btnAdjustCenter.classList.remove('active');
       floorplanContainer.classList.remove('adjusting-center');
       if (centerMarker) centerMarker.style.display = 'none';
+      if (centerToolsPanel) centerToolsPanel.classList.add('hidden');
+      renderHelperCanvas();
     }
+  }
+
+  function switchCenterMode(mode) {
+    centerMode = mode;
+    const modeBtns = [btnModeFree, btnModeBox, btnModePolygon, btnModeAuto];
+    modeBtns.forEach(btn => {
+      if (btn) btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    if (centerPolyActions) {
+      centerPolyActions.classList.toggle('hidden', mode !== 'polygon');
+    }
+
+    if (centerToolDesc) {
+      if (mode === 'free') {
+        centerToolDesc.innerHTML = '💡 <strong>Kéo / Chấm Tâm:</strong> Click hoặc kéo thả trực tiếp điểm tâm đỏ đến vị trí trung tâm mong muốn.';
+      } else if (mode === 'box') {
+        boxPoints = [];
+        centerToolDesc.innerHTML = '📐 <strong>Lập cực 2 góc chéo (Nhà vuông / chữ nhật):</strong> Hãy click <strong>Góc thứ 1</strong> (ví dụ: góc trên-trái tường bao nhà).';
+      } else if (mode === 'polygon') {
+        polygonPoints = [];
+        centerToolDesc.innerHTML = '⬡ <strong>Đa giác (Nhà chữ L / khuyết góc / đất xéo):</strong> Click lần lượt từng góc tường bao của ngôi nhà (tối thiểu 3 góc).';
+      } else if (mode === 'auto') {
+        centerToolDesc.innerHTML = '⚡ <strong>Tự động quét:</strong> Đã tự động phân tích và xác định tâm khối kiến trúc chính của bản vẽ.';
+      }
+    }
+    renderHelperCanvas();
   }
 
   function handleFileUpload(e) {
@@ -167,8 +274,14 @@
       const img = new Image();
       img.onload = function() {
         if (floorplanSection) floorplanSection.classList.remove('hidden');
+        document.body.classList.add('has-floorplan');
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) appContainer.classList.add('has-floorplan');
+
         floorplanImage.src = img.src;
         imageZoom = 100;
+        boxPoints = [];
+        polygonPoints = [];
         if (imageZoomSlider) imageZoomSlider.value = 100;
         floorplanImage.style.width = '100%';
         
@@ -176,6 +289,7 @@
           detectCenter(floorplanImage);
           setupOverlay();
           scrollToCenter();
+          renderHelperCanvas();
           floorplanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 120);
       };
@@ -185,6 +299,7 @@
     e.target.value = '';
   }
 
+  // Smart Architectural Structural Bounds Detection
   function detectCenter(imgElement) {
     const naturalW = imgElement.naturalWidth;
     const naturalH = imgElement.naturalHeight;
@@ -206,74 +321,75 @@
     if (imageData) {
       const data = imageData.data;
       
-      // Stage 1: Margin Trimming — skip 5% border on each side
-      // to exclude frame borders, title blocks, annotations, scale marks
-      const marginRatio = 0.05;
-      const marginL = Math.floor(naturalW * marginRatio);
-      const marginR = Math.floor(naturalW * (1 - marginRatio));
-      const marginT = Math.floor(naturalH * marginRatio);
-      const marginB = Math.floor(naturalH * (1 - marginRatio));
+      // Trim outer 4% margins to remove border lines
+      const marginX = Math.floor(naturalW * 0.04);
+      const marginY = Math.floor(naturalH * 0.04);
       
-      // Stage 2: Weighted Centroid — darker pixels = higher weight
-      // Collect dark pixel positions and their weights
-      const step = 2; // scan every 2nd pixel for performance
-      let sumWX = 0, sumWY = 0, sumW = 0;
-      const darkPixels = []; // store for outlier rejection pass
+      // 1D Line Density Histograms
+      const rowDensity = new Float32Array(naturalH);
+      const colDensity = new Float32Array(naturalW);
       
-      for (let y = marginT; y < marginB; y += step) {
-        for (let x = marginL; x < marginR; x += step) {
+      const step = 2; // performance sampling
+      for (let y = marginY; y < naturalH - marginY; y += step) {
+        for (let x = marginX; x < naturalW - marginX; x += step) {
           const i = (y * naturalW + x) * 4;
           const a = data[i + 3];
           if (a < 128) continue;
           
           const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          if (gray < 128) {
-            // Weight: darker pixel → higher weight (range 0.5 to 1.0)
-            const weight = (128 - gray) / 128;
-            sumWX += x * weight;
-            sumWY += y * weight;
-            sumW += weight;
-            darkPixels.push({ x, y, weight });
+          if (gray < 160) {
+            // Dark pixel detected
+            const weight = (160 - gray) / 160;
+            rowDensity[y] += weight;
+            colDensity[x] += weight;
           }
         }
       }
       
-      if (sumW > 0 && darkPixels.length > 10) {
-        // Initial centroid from weighted average
-        let cx = sumWX / sumW;
-        let cy = sumWY / sumW;
-        
-        // Stage 3: Outlier Rejection — remove pixels > 1.5× average distance
-        // This filters out scattered annotations, text labels, dimension lines
-        let totalDist = 0;
-        for (let p = 0; p < darkPixels.length; p++) {
-          const dx = darkPixels[p].x - cx;
-          const dy = darkPixels[p].y - cy;
-          darkPixels[p].dist = Math.sqrt(dx * dx + dy * dy);
-          totalDist += darkPixels[p].dist;
-        }
-        const avgDist = totalDist / darkPixels.length;
-        const distThreshold = avgDist * 1.5;
-        
-        // Recalculate centroid without outliers
-        let sumWX2 = 0, sumWY2 = 0, sumW2 = 0;
-        for (let p = 0; p < darkPixels.length; p++) {
-          if (darkPixels[p].dist <= distThreshold) {
-            sumWX2 += darkPixels[p].x * darkPixels[p].weight;
-            sumWY2 += darkPixels[p].y * darkPixels[p].weight;
-            sumW2 += darkPixels[p].weight;
+      // Find peak densities
+      let maxRowD = 0, maxColD = 0;
+      for (let y = 0; y < naturalH; y++) if (rowDensity[y] > maxRowD) maxRowD = rowDensity[y];
+      for (let x = 0; x < naturalW; x++) if (colDensity[x] > maxColD) maxColD = colDensity[x];
+      
+      const rowThreshold = maxRowD * 0.08;
+      const colThreshold = maxColD * 0.08;
+      
+      let minX = marginX, maxX = naturalW - marginX;
+      let minY = marginY, maxY = naturalH - marginY;
+      
+      // Scan inward to find continuous structural boundaries
+      for (let x = marginX; x < naturalW - marginX; x++) {
+        if (colDensity[x] > colThreshold) { minX = x; break; }
+      }
+      for (let x = naturalW - marginX; x >= marginX; x--) {
+        if (colDensity[x] > colThreshold) { maxX = x; break; }
+      }
+      for (let y = marginY; y < naturalH - marginY; y++) {
+        if (rowDensity[y] > rowThreshold) { minY = y; break; }
+      }
+      for (let y = naturalH - marginY; y >= marginY; y--) {
+        if (rowDensity[y] > rowThreshold) { maxY = y; break; }
+      }
+      
+      // Check bottom 25% for a valley to remove title text block
+      const bottomQuarter = Math.floor(naturalH * 0.75);
+      if (maxY > bottomQuarter) {
+        let valleyY = -1;
+        let minValleyVal = Infinity;
+        for (let y = bottomQuarter; y < maxY - 15; y++) {
+          if (rowDensity[y] < minValleyVal) {
+            minValleyVal = rowDensity[y];
+            valleyY = y;
           }
         }
-        
-        if (sumW2 > 0) {
-          // Use refined centroid (outliers removed)
-          normalizedCenterX = (sumWX2 / sumW2) / naturalW;
-          normalizedCenterY = (sumWY2 / sumW2) / naturalH;
-        } else {
-          // Fallback to initial weighted centroid if filtering too aggressive
-          normalizedCenterX = cx / naturalW;
-          normalizedCenterY = cy / naturalH;
+        if (minValleyVal < maxRowD * 0.05 && valleyY > 0) {
+          maxY = valleyY;
         }
+      }
+      
+      if (maxX > minX + 50 && maxY > minY + 50) {
+        normalizedCenterX = ((minX + maxX) / 2) / naturalW;
+        normalizedCenterY = ((minY + maxY) / 2) / naturalH;
       } else {
         normalizedCenterX = 0.5;
         normalizedCenterY = 0.5;
@@ -306,24 +422,20 @@
     const oldImgH = floorplanImage.offsetHeight || 1;
     
     // Determine the anchor point in image-ratio space
-    // If an explicit anchor (e.g. mouse cursor) is provided, use it; otherwise use viewport center
     let ratioX, ratioY;
     if (typeof anchorClientX === 'number' && typeof anchorClientY === 'number') {
-      // Anchor at the cursor/touch position within the container
       const containerRect = floorplanContainer.getBoundingClientRect();
       const localX = anchorClientX - containerRect.left + floorplanContainer.scrollLeft;
       const localY = anchorClientY - containerRect.top + floorplanContainer.scrollTop;
       ratioX = localX / oldImgW;
       ratioY = localY / oldImgH;
     } else {
-      // Anchor at the current viewport center
       const viewCenterX = floorplanContainer.scrollLeft + containerW / 2;
       const viewCenterY = floorplanContainer.scrollTop + containerH / 2;
       ratioX = viewCenterX / oldImgW;
       ratioY = viewCenterY / oldImgH;
     }
     
-    // Clamp ratios to valid range
     ratioX = Math.max(0, Math.min(1, ratioX));
     ratioY = Math.max(0, Math.min(1, ratioY));
     
@@ -331,36 +443,35 @@
     floorplanImage.style.width = imageZoom + '%';
     floorplanImage.style.maxWidth = 'none';
     
-    // Recalculate pixel center position anchored to normalized coordinates
+    // Recalculate pixel center
     calculateCenterPx();
     
-    // Calculate new scroll to keep the anchor point at the same screen position
+    // Scroll to preserve anchor
     const newImgW = floorplanImage.offsetWidth;
     const newImgH = floorplanImage.offsetHeight;
     
     if (typeof anchorClientX === 'number' && typeof anchorClientY === 'number') {
-      // Keep the cursor-pointed pixel at the same screen position
       const containerRect = floorplanContainer.getBoundingClientRect();
       const screenOffsetX = anchorClientX - containerRect.left;
       const screenOffsetY = anchorClientY - containerRect.top;
       floorplanContainer.scrollLeft = ratioX * newImgW - screenOffsetX;
       floorplanContainer.scrollTop = ratioY * newImgH - screenOffsetY;
     } else {
-      // Keep the viewport center at the same image point
       floorplanContainer.scrollLeft = ratioX * newImgW - containerW / 2;
       floorplanContainer.scrollTop = ratioY * newImgH - containerH / 2;
     }
     
     updateOverlayPosition();
+    renderHelperCanvas();
   }
 
   function setupOverlay() {
     calculateCenterPx();
     updateOverlayPosition();
+    renderHelperCanvas();
   }
 
   function scrollToCenter() {
-    // Scroll the viewport so the detected center of the drawing is visible in the middle
     if (!floorplanContainer || !floorplanImage) return;
     const containerW = floorplanContainer.clientWidth;
     const containerH = floorplanContainer.clientHeight;
@@ -421,6 +532,118 @@
     });
   }
 
+  // Render Visual Guide Lines (Diagonals, Bounding Box, Polygon, Crosshairs)
+  function renderHelperCanvas() {
+    if (!floorplanHelperCanvas || !floorplanImage) return;
+    const curW = floorplanImage.offsetWidth || 1;
+    const curH = floorplanImage.offsetHeight || 1;
+
+    floorplanHelperCanvas.width = curW;
+    floorplanHelperCanvas.height = curH;
+    const ctx = floorplanHelperCanvas.getContext('2d');
+    ctx.clearRect(0, 0, curW, curH);
+
+    if (!isAdjustingCenter) return;
+
+    // 1. Box Mode: Draw 2 points, bounding box, and diagonal cross
+    if (centerMode === 'box' && boxPoints.length > 0) {
+      const p1 = { x: boxPoints[0].x * curW, y: boxPoints[0].y * curH };
+      
+      // Point 1 marker
+      drawPin(ctx, p1.x, p1.y, '1', '#2563eb');
+
+      if (boxPoints.length === 2) {
+        const p2 = { x: boxPoints[1].x * curW, y: boxPoints[1].y * curH };
+        drawPin(ctx, p2.x, p2.y, '2', '#2563eb');
+
+        const xMin = Math.min(p1.x, p2.x);
+        const xMax = Math.max(p1.x, p2.x);
+        const yMin = Math.min(p1.y, p2.y);
+        const yMax = Math.max(p1.y, p2.y);
+
+        // Bounding Rectangle
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
+        ctx.fillRect(xMin, yMin, xMax - xMin, yMax - yMin);
+
+        // Diagonals
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(xMin, yMin);
+        ctx.lineTo(xMax, yMax);
+        ctx.moveTo(xMax, yMin);
+        ctx.lineTo(xMin, yMax);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // 2. Polygon Mode: Draw polygon outline and centroid lines
+    if (centerMode === 'polygon' && polygonPoints.length > 0) {
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      
+      polygonPoints.forEach((pt, idx) => {
+        const px = pt.x * curW;
+        const py = pt.y * curH;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+
+      if (polygonPoints.length >= 3) {
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.08)';
+        ctx.fill();
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw pins
+      polygonPoints.forEach((pt, idx) => {
+        drawPin(ctx, pt.x * curW, pt.y * curH, (idx + 1).toString(), '#8b5cf6');
+      });
+    }
+
+    // 3. Free Mode: Draw full crosshairs through center
+    if (centerMode === 'free' || centerMode === 'auto') {
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(curW, centerY);
+      ctx.moveTo(centerX, 0);
+      ctx.lineTo(centerX, curH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function drawPin(ctx, x, y, label, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y);
+    ctx.restore();
+  }
+
   function setOverlaySize(newSize) {
     overlaySize = Math.max(60, Math.min(800, newSize));
     updateOverlayPosition();
@@ -429,12 +652,10 @@
   function handleWheelZoom(e) {
     e.preventDefault();
     if (e.ctrlKey) {
-      // Ctrl + Wheel: Zoom floorplan image at cursor position (Google Maps style)
       imageZoom = Math.max(50, Math.min(300, imageZoom + (e.deltaY < 0 ? 10 : -10)));
       if (imageZoomSlider) imageZoomSlider.value = imageZoom;
       updateImageZoom(e.clientX, e.clientY);
     } else {
-      // Normal Wheel: Zoom star chart
       const zoomDelta = e.deltaY < 0 ? 15 : -15;
       setOverlaySize(overlaySize + zoomDelta);
     }
@@ -458,11 +679,104 @@
     const curW = floorplanImage.offsetWidth || 1;
     const curH = floorplanImage.offsetHeight || 1;
     
-    normalizedCenterX = Math.max(0, Math.min(1, clickX / curW));
-    normalizedCenterY = Math.max(0, Math.min(1, clickY / curH));
-    
+    const ratioX = Math.max(0, Math.min(1, clickX / curW));
+    const ratioY = Math.max(0, Math.min(1, clickY / curH));
+
+    if (centerMode === 'box') {
+      if (boxPoints.length >= 2) boxPoints = [];
+      boxPoints.push({ x: ratioX, y: ratioY });
+
+      if (boxPoints.length === 1) {
+        if (centerToolDesc) {
+          centerToolDesc.innerHTML = '📐 <strong>Đã chọn Góc 1.</strong> Hãy click tiếp <strong>Góc đối diện (Góc 2)</strong> của nhà.';
+        }
+      } else if (boxPoints.length === 2) {
+        normalizedCenterX = (boxPoints[0].x + boxPoints[1].x) / 2;
+        normalizedCenterY = (boxPoints[0].y + boxPoints[1].y) / 2;
+        calculateCenterPx();
+        updateOverlayPosition();
+        if (centerToolDesc) {
+          centerToolDesc.innerHTML = '✓ <strong>Khóa tâm thành công:</strong> Tâm đã được đặt chính xác tại giao điểm 2 đường chéo! Click lại 2 điểm khác nếu muốn đổi.';
+        }
+      }
+      renderHelperCanvas();
+      return;
+    }
+
+    if (centerMode === 'polygon') {
+      polygonPoints.push({ x: ratioX, y: ratioY });
+      if (polygonPoints.length >= 3) {
+        computePolygonCentroid();
+      }
+      if (centerToolDesc) {
+        centerToolDesc.innerHTML = `⬡ <strong>Đã chọn ${polygonPoints.length} góc.</strong> Tiếp tục click các góc khác hoặc bấm <strong>✓ Xác Nhận</strong> bên dưới.`;
+      }
+      renderHelperCanvas();
+      return;
+    }
+
+    // Free mode
+    normalizedCenterX = ratioX;
+    normalizedCenterY = ratioY;
     calculateCenterPx();
     updateOverlayPosition();
+    renderHelperCanvas();
+  }
+
+  // Polygon Centroid Formula: Cx = (1/6A) * sum((xi + xi+1)*(xi*yi+1 - xi+1*yi))
+  function computePolygonCentroid() {
+    const pts = polygonPoints;
+    const n = pts.length;
+    if (n < 3) return;
+
+    let area = 0;
+    let cx = 0;
+    let cy = 0;
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const factor = pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+      area += factor;
+      cx += (pts[i].x + pts[j].x) * factor;
+      cy += (pts[i].y + pts[j].y) * factor;
+    }
+    area = area / 2;
+
+    if (Math.abs(area) > 0.0001) {
+      normalizedCenterX = Math.max(0, Math.min(1, cx / (6 * area)));
+      normalizedCenterY = Math.max(0, Math.min(1, cy / (6 * area)));
+      calculateCenterPx();
+      updateOverlayPosition();
+    }
+  }
+
+  function finishPolygon() {
+    if (polygonPoints.length >= 3) {
+      computePolygonCentroid();
+      renderHelperCanvas();
+      if (centerToolDesc) {
+        centerToolDesc.innerHTML = `✓ <strong>Hoàn tất:</strong> Đã tính toán chuẩn xác trọng tâm đa giác (${polygonPoints.length} đỉnh) của ngôi nhà.`;
+      }
+    }
+  }
+
+  function undoPolygonPoint() {
+    if (polygonPoints.length > 0) {
+      polygonPoints.pop();
+      if (polygonPoints.length >= 3) computePolygonCentroid();
+      renderHelperCanvas();
+      if (centerToolDesc) {
+        centerToolDesc.innerHTML = `⬡ <strong>Đã xóa 1 điểm:</strong> Còn ${polygonPoints.length} điểm.`;
+      }
+    }
+  }
+
+  function clearPolygon() {
+    polygonPoints = [];
+    renderHelperCanvas();
+    if (centerToolDesc) {
+      centerToolDesc.innerHTML = '⬡ <strong>Làm lại:</strong> Hãy click lần lượt các góc tường bao quanh nhà.';
+    }
   }
 
   function setupInteractionHandlers() {
@@ -484,7 +798,7 @@
 
       // 1-pointer interaction:
       if (isAdjustingCenter) {
-        // Mode 1: Moving center
+        // Mode 1: Moving center / picking corners
         e.preventDefault();
         isMovingCenter = true;
         updateCenterFromEvent(e);
@@ -527,8 +841,8 @@
         return;
       }
 
-      // Moving center mode
-      if (isMovingCenter && isAdjustingCenter) {
+      // Moving center mode (free drag)
+      if (isMovingCenter && isAdjustingCenter && centerMode === 'free') {
         e.preventDefault();
         updateCenterFromEvent(e);
         return;
@@ -570,6 +884,14 @@
     document.addEventListener('touchcancel', onEnd);
   }
 
+  function debounce(fn, ms) {
+    let timer;
+    return function(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+  }
+
   function exportFloorplan() {
     if (!floorplanContainer || typeof html2canvas === 'undefined') {
       console.error('FloorPlan: html2canvas not found or container missing');
@@ -586,7 +908,9 @@
       btnExportFloorplan.disabled = true;
     }
 
-    // Capture the image and overlay element directly
+    // Hide helper canvas during export for a clean picture
+    if (floorplanHelperCanvas) floorplanHelperCanvas.style.display = 'none';
+
     html2canvas(floorplanContainer, {
       scale: 2,
       useCORS: true,
@@ -594,6 +918,8 @@
       scrollX: 0,
       scrollY: 0
     }).then(async canvas => {
+      if (floorplanHelperCanvas) floorplanHelperCanvas.style.display = 'block';
+
       if (window.saveOrShareImage) {
         await window.saveOrShareImage(canvas, 'tinhban_banve.png', 'Bản Vẽ Tinh Bàn Phong Thủy');
       } else {
@@ -612,6 +938,7 @@
       }
     }).catch(err => {
       console.error('FloorPlan: Error exporting floorplan:', err);
+      if (floorplanHelperCanvas) floorplanHelperCanvas.style.display = 'block';
       if (btnExportFloorplan) {
         btnExportFloorplan.innerText = '💾 Tải Ảnh';
         btnExportFloorplan.disabled = false;
