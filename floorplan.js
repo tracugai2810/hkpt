@@ -35,14 +35,15 @@
   let touchStartRotation = 0;
 
   // DOM Elements
-  let btnUploadPlan, floorplanFileInput, floorplanSection, floorplanContainer;
+  let btnUploadPlan, floorplanFileInput, floorplanSection, floorplanContainer, floorplanWrapper;
   let floorplanImage, floorplanHelperCanvas, floorplanOverlay, floorplanCompass;
   let centerMarker, sizeSlider, imageZoomSlider, opacitySlider, rotationDisplay;
   let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, btnToggleFullscreen;
   let transparentBgCheckbox, guideLinesCheckbox;
-  let centerToolsPanel, centerToolDesc, centerPolyActions;
+  let centerToolsPanel, centerToolDesc;
+  let centerBoxActions, centerPolyActions, centerFreeActions;
   let btnModeFree, btnModeBox, btnModePolygon, btnModeAuto;
-  let btnPolyDone, btnPolyUndo, btnPolyClear;
+  let btnBoxDone, btnBoxClear, btnPolyDone, btnPolyUndo, btnPolyClear, btnFreeDone;
 
   function init() {
     if (isInitialized) return;
@@ -52,6 +53,7 @@
     floorplanFileInput = document.getElementById('floorplanFileInput');
     floorplanSection = document.getElementById('floorplanSection');
     floorplanContainer = document.getElementById('floorplanContainer');
+    floorplanWrapper = document.getElementById('floorplanWrapper');
     floorplanImage = document.getElementById('floorplanImage');
     floorplanHelperCanvas = document.getElementById('floorplanHelperCanvas');
     floorplanOverlay = document.getElementById('floorplanOverlay');
@@ -71,14 +73,20 @@
     // Center Tools elements
     centerToolsPanel = document.getElementById('centerToolsPanel');
     centerToolDesc = document.getElementById('centerToolDesc');
+    centerBoxActions = document.getElementById('centerBoxActions');
     centerPolyActions = document.getElementById('centerPolyActions');
+    centerFreeActions = document.getElementById('centerFreeActions');
     btnModeFree = document.getElementById('btnModeFree');
     btnModeBox = document.getElementById('btnModeBox');
     btnModePolygon = document.getElementById('btnModePolygon');
     btnModeAuto = document.getElementById('btnModeAuto');
+    
+    btnBoxDone = document.getElementById('btnBoxDone');
+    btnBoxClear = document.getElementById('btnBoxClear');
     btnPolyDone = document.getElementById('btnPolyDone');
     btnPolyUndo = document.getElementById('btnPolyUndo');
     btnPolyClear = document.getElementById('btnPolyClear');
+    btnFreeDone = document.getElementById('btnFreeDone');
 
     if (!btnUploadPlan || !floorplanFileInput || !floorplanImage || !floorplanContainer) {
       console.warn('FloorPlan: Missing required DOM elements');
@@ -174,17 +182,23 @@
       switchCenterMode('auto');
     });
 
-    if (btnPolyDone) btnPolyDone.addEventListener('click', finishPolygon);
+    // 13. Center Confirmation and Action Buttons
+    if (btnBoxDone) btnBoxDone.addEventListener('click', confirmAndLockCenter);
+    if (btnBoxClear) btnBoxClear.addEventListener('click', clearBoxPoints);
+
+    if (btnPolyDone) btnPolyDone.addEventListener('click', finishPolygonAndLock);
     if (btnPolyUndo) btnPolyUndo.addEventListener('click', undoPolygonPoint);
     if (btnPolyClear) btnPolyClear.addEventListener('click', clearPolygon);
 
-    // 13. Mouse Wheel Zoom on star chart (or on image if Ctrl is held)
+    if (btnFreeDone) btnFreeDone.addEventListener('click', confirmAndLockCenter);
+
+    // 14. Mouse Wheel Zoom on star chart (or on image if Ctrl is held)
     floorplanContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
 
-    // 14. Core interaction handlers (Rotate, Move Center, Pinch Zoom, Pan)
+    // 15. Core interaction handlers (Rotate, Move Center, Pinch Zoom, Pan)
     setupInteractionHandlers();
 
-    // 15. Window resize listener to keep overlay and canvas aligned
+    // 16. Window resize listener to keep overlay and canvas aligned
     window.addEventListener('resize', debounce(() => {
       calculateCenterPx();
       updateOverlayPosition();
@@ -238,6 +252,29 @@
     }
   }
 
+  function confirmAndLockCenter() {
+    // If in box mode with 2 points, ensure center is calculated
+    if (centerMode === 'box' && boxPoints.length === 2) {
+      normalizedCenterX = (boxPoints[0].x + boxPoints[1].x) / 2;
+      normalizedCenterY = (boxPoints[0].y + boxPoints[1].y) / 2;
+    }
+    calculateCenterPx();
+    updateOverlayPosition();
+
+    // Permanently exit center adjusting mode to lock the center
+    if (isAdjustingCenter) {
+      toggleAdjustCenter();
+    }
+  }
+
+  function clearBoxPoints() {
+    boxPoints = [];
+    renderHelperCanvas();
+    if (centerToolDesc) {
+      centerToolDesc.innerHTML = '📐 <strong>Lập cực 2 góc chéo:</strong> Hãy click <strong>Góc thứ 1</strong> (ví dụ: góc trên-trái tường bao nhà).';
+    }
+  }
+
   function switchCenterMode(mode) {
     centerMode = mode;
     const modeBtns = [btnModeFree, btnModeBox, btnModePolygon, btnModeAuto];
@@ -245,13 +282,13 @@
       if (btn) btn.classList.toggle('active', btn.dataset.mode === mode);
     });
 
-    if (centerPolyActions) {
-      centerPolyActions.classList.toggle('hidden', mode !== 'polygon');
-    }
+    if (centerBoxActions) centerBoxActions.classList.toggle('hidden', mode !== 'box');
+    if (centerPolyActions) centerPolyActions.classList.toggle('hidden', mode !== 'polygon');
+    if (centerFreeActions) centerFreeActions.classList.toggle('hidden', mode !== 'free' && mode !== 'auto');
 
     if (centerToolDesc) {
       if (mode === 'free') {
-        centerToolDesc.innerHTML = '💡 <strong>Kéo / Chấm Tâm:</strong> Click hoặc kéo thả trực tiếp điểm tâm đỏ đến vị trí trung tâm mong muốn.';
+        centerToolDesc.innerHTML = '💡 <strong>Kéo / Chấm Tâm:</strong> Click hoặc kéo thả trực tiếp điểm tâm đỏ đến vị trí trung tâm mong muốn. Sau đó nhấn <strong>✓ Xác Nhận & Khóa Tâm</strong>.';
       } else if (mode === 'box') {
         boxPoints = [];
         centerToolDesc.innerHTML = '📐 <strong>Lập cực 2 góc chéo (Nhà vuông / chữ nhật):</strong> Hãy click <strong>Góc thứ 1</strong> (ví dụ: góc trên-trái tường bao nhà).';
@@ -259,7 +296,7 @@
         polygonPoints = [];
         centerToolDesc.innerHTML = '⬡ <strong>Đa giác (Nhà chữ L / khuyết góc / đất xéo):</strong> Click lần lượt từng góc tường bao của ngôi nhà (tối thiểu 3 góc).';
       } else if (mode === 'auto') {
-        centerToolDesc.innerHTML = '⚡ <strong>Tự động quét:</strong> Đã tự động phân tích và xác định tâm khối kiến trúc chính của bản vẽ.';
+        centerToolDesc.innerHTML = '⚡ <strong>Tự động quét:</strong> Đã tự động phân tích và xác định tâm khối kiến trúc chính của bản vẽ. Nhấn <strong>✓ Xác Nhận & Khóa Tâm</strong> để hoàn tất.';
       }
     }
     renderHelperCanvas();
@@ -540,6 +577,9 @@
 
     floorplanHelperCanvas.width = curW;
     floorplanHelperCanvas.height = curH;
+    floorplanHelperCanvas.style.width = curW + 'px';
+    floorplanHelperCanvas.style.height = curH + 'px';
+
     const ctx = floorplanHelperCanvas.getContext('2d');
     ctx.clearRect(0, 0, curW, curH);
 
@@ -613,9 +653,9 @@
 
     // 3. Free Mode: Draw full crosshairs through center
     if (centerMode === 'free' || centerMode === 'auto') {
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
       ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([5, 4]);
       ctx.beginPath();
       ctx.moveTo(0, centerY);
       ctx.lineTo(curW, centerY);
@@ -630,14 +670,14 @@
     ctx.save();
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.arc(x, y, 9, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 9px sans-serif';
+    ctx.font = 'bold 10px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, x, y);
@@ -668,19 +708,20 @@
     return Math.atan2(y, x) * 180 / Math.PI;
   }
 
+  // Exact 0px-offset Coordinate Calculation
   function updateCenterFromEvent(e) {
+    if (!floorplanImage) return;
     const imgRect = floorplanImage.getBoundingClientRect();
+    if (!imgRect.width || !imgRect.height) return;
+
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     
     const clickX = clientX - imgRect.left;
     const clickY = clientY - imgRect.top;
     
-    const curW = floorplanImage.offsetWidth || 1;
-    const curH = floorplanImage.offsetHeight || 1;
-    
-    const ratioX = Math.max(0, Math.min(1, clickX / curW));
-    const ratioY = Math.max(0, Math.min(1, clickY / curH));
+    const ratioX = Math.max(0, Math.min(1, clickX / imgRect.width));
+    const ratioY = Math.max(0, Math.min(1, clickY / imgRect.height));
 
     if (centerMode === 'box') {
       if (boxPoints.length >= 2) boxPoints = [];
@@ -688,7 +729,7 @@
 
       if (boxPoints.length === 1) {
         if (centerToolDesc) {
-          centerToolDesc.innerHTML = '📐 <strong>Đã chọn Góc 1.</strong> Hãy click tiếp <strong>Góc đối diện (Góc 2)</strong> của nhà.';
+          centerToolDesc.innerHTML = '📐 <strong>Đã chọn Góc 1.</strong> Hãy click tiếp <strong>Góc đối diện (Góc 2)</strong> của tường bao nhà.';
         }
       } else if (boxPoints.length === 2) {
         normalizedCenterX = (boxPoints[0].x + boxPoints[1].x) / 2;
@@ -696,7 +737,7 @@
         calculateCenterPx();
         updateOverlayPosition();
         if (centerToolDesc) {
-          centerToolDesc.innerHTML = '✓ <strong>Khóa tâm thành công:</strong> Tâm đã được đặt chính xác tại giao điểm 2 đường chéo! Click lại 2 điểm khác nếu muốn đổi.';
+          centerToolDesc.innerHTML = '✓ <strong>Đã tính giao điểm 2 đường chéo!</strong> Nhấn nút <strong>✓ Xác Nhận & Khóa Tâm</strong> bên dưới để hoàn tất.';
         }
       }
       renderHelperCanvas();
@@ -709,7 +750,7 @@
         computePolygonCentroid();
       }
       if (centerToolDesc) {
-        centerToolDesc.innerHTML = `⬡ <strong>Đã chọn ${polygonPoints.length} góc.</strong> Tiếp tục click các góc khác hoặc bấm <strong>✓ Xác Nhận</strong> bên dưới.`;
+        centerToolDesc.innerHTML = `⬡ <strong>Đã chọn ${polygonPoints.length} góc.</strong> Tiếp tục click các góc khác hoặc nhấn <strong>✓ Xác Nhận & Khóa Tâm</strong> bên dưới.`;
       }
       renderHelperCanvas();
       return;
@@ -750,14 +791,11 @@
     }
   }
 
-  function finishPolygon() {
+  function finishPolygonAndLock() {
     if (polygonPoints.length >= 3) {
       computePolygonCentroid();
-      renderHelperCanvas();
-      if (centerToolDesc) {
-        centerToolDesc.innerHTML = `✓ <strong>Hoàn tất:</strong> Đã tính toán chuẩn xác trọng tâm đa giác (${polygonPoints.length} đỉnh) của ngôi nhà.`;
-      }
     }
+    confirmAndLockCenter();
   }
 
   function undoPolygonPoint() {

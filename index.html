@@ -195,12 +195,14 @@
       </div>
       
       <div id="floorplanContainer" class="floorplan-container">
-        <img id="floorplanImage" class="floorplan-image" alt="Bản vẽ nhà" />
-        <canvas id="floorplanHelperCanvas" class="floorplan-helper-canvas"></canvas>
-        <div id="floorplanOverlay" class="floorplan-overlay">
-          <canvas id="floorplanCompass" class="floorplan-compass"></canvas>
+        <div id="floorplanWrapper" class="floorplan-wrapper">
+          <img id="floorplanImage" class="floorplan-image" alt="Bản vẽ nhà" />
+          <canvas id="floorplanHelperCanvas" class="floorplan-helper-canvas"></canvas>
+          <div id="floorplanOverlay" class="floorplan-overlay">
+            <canvas id="floorplanCompass" class="floorplan-compass"></canvas>
+          </div>
+          <div id="centerMarker" class="center-marker"></div>
         </div>
-        <div id="centerMarker" class="center-marker"></div>
       </div>
 
       <!-- Specialized Center Tools Panel -->
@@ -225,10 +227,23 @@
         <div class="center-tool-desc" id="centerToolDesc">
           💡 <strong>Kéo / Chấm Tâm:</strong> Click hoặc kéo điểm tâm đỏ đến vị trí trung tâm mong muốn.
         </div>
-        <div class="center-poly-actions hidden" id="centerPolyActions">
-          <button type="button" class="fp-btn fp-btn-sm fp-btn-primary" id="btnPolyDone">✓ Xác Nhận Đa Giác</button>
+        
+        <!-- Action Buttons for Box Mode -->
+        <div class="center-mode-actions hidden" id="centerBoxActions">
+          <button type="button" class="fp-btn fp-btn-sm fp-btn-primary" id="btnBoxDone">✓ Xác Nhận & Khóa Tâm</button>
+          <button type="button" class="fp-btn fp-btn-sm" id="btnBoxClear">✕ Chọn Lại 2 Góc</button>
+        </div>
+
+        <!-- Action Buttons for Polygon Mode -->
+        <div class="center-mode-actions hidden" id="centerPolyActions">
+          <button type="button" class="fp-btn fp-btn-sm fp-btn-primary" id="btnPolyDone">✓ Xác Nhận & Khóa Tâm</button>
           <button type="button" class="fp-btn fp-btn-sm" id="btnPolyUndo">↩ Xóa Điểm Cuối</button>
           <button type="button" class="fp-btn fp-btn-sm" id="btnPolyClear">✕ Làm Lại</button>
+        </div>
+
+        <!-- Action Buttons for Free/Auto Mode -->
+        <div class="center-mode-actions" id="centerFreeActions">
+          <button type="button" class="fp-btn fp-btn-sm fp-btn-primary" id="btnFreeDone">✓ Xác Nhận & Khóa Tâm</button>
         </div>
       </div>
 

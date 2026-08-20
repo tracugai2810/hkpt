@@ -1011,7 +1011,7 @@ select.input-field {
   margin-bottom: 6px;
 }
 
-.center-poly-actions {
+.center-mode-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -1019,8 +1019,9 @@ select.input-field {
 }
 
 .fp-btn-sm {
-  padding: 5px 10px;
-  font-size: 0.75rem;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .fp-toggles-row {
