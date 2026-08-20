@@ -175,6 +175,7 @@
         setTimeout(() => {
           detectCenter(floorplanImage);
           setupOverlay();
+          scrollToCenter();
           floorplanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 120);
       };
@@ -204,29 +205,75 @@
     
     if (imageData) {
       const data = imageData.data;
-      let minX = naturalW, maxX = 0, minY = naturalH, maxY = 0;
-      let foundDark = false;
       
-      for (let y = 0; y < naturalH; y += 2) {
-        for (let x = 0; x < naturalW; x += 2) {
+      // Stage 1: Margin Trimming — skip 5% border on each side
+      // to exclude frame borders, title blocks, annotations, scale marks
+      const marginRatio = 0.05;
+      const marginL = Math.floor(naturalW * marginRatio);
+      const marginR = Math.floor(naturalW * (1 - marginRatio));
+      const marginT = Math.floor(naturalH * marginRatio);
+      const marginB = Math.floor(naturalH * (1 - marginRatio));
+      
+      // Stage 2: Weighted Centroid — darker pixels = higher weight
+      // Collect dark pixel positions and their weights
+      const step = 2; // scan every 2nd pixel for performance
+      let sumWX = 0, sumWY = 0, sumW = 0;
+      const darkPixels = []; // store for outlier rejection pass
+      
+      for (let y = marginT; y < marginB; y += step) {
+        for (let x = marginL; x < marginR; x += step) {
           const i = (y * naturalW + x) * 4;
           const a = data[i + 3];
           if (a < 128) continue;
           
           const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
           if (gray < 128) {
-            foundDark = true;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
+            // Weight: darker pixel → higher weight (range 0.5 to 1.0)
+            const weight = (128 - gray) / 128;
+            sumWX += x * weight;
+            sumWY += y * weight;
+            sumW += weight;
+            darkPixels.push({ x, y, weight });
           }
         }
       }
       
-      if (foundDark && maxX > minX && maxY > minY) {
-        normalizedCenterX = ((minX + maxX) / 2) / naturalW;
-        normalizedCenterY = ((minY + maxY) / 2) / naturalH;
+      if (sumW > 0 && darkPixels.length > 10) {
+        // Initial centroid from weighted average
+        let cx = sumWX / sumW;
+        let cy = sumWY / sumW;
+        
+        // Stage 3: Outlier Rejection — remove pixels > 1.5× average distance
+        // This filters out scattered annotations, text labels, dimension lines
+        let totalDist = 0;
+        for (let p = 0; p < darkPixels.length; p++) {
+          const dx = darkPixels[p].x - cx;
+          const dy = darkPixels[p].y - cy;
+          darkPixels[p].dist = Math.sqrt(dx * dx + dy * dy);
+          totalDist += darkPixels[p].dist;
+        }
+        const avgDist = totalDist / darkPixels.length;
+        const distThreshold = avgDist * 1.5;
+        
+        // Recalculate centroid without outliers
+        let sumWX2 = 0, sumWY2 = 0, sumW2 = 0;
+        for (let p = 0; p < darkPixels.length; p++) {
+          if (darkPixels[p].dist <= distThreshold) {
+            sumWX2 += darkPixels[p].x * darkPixels[p].weight;
+            sumWY2 += darkPixels[p].y * darkPixels[p].weight;
+            sumW2 += darkPixels[p].weight;
+          }
+        }
+        
+        if (sumW2 > 0) {
+          // Use refined centroid (outliers removed)
+          normalizedCenterX = (sumWX2 / sumW2) / naturalW;
+          normalizedCenterY = (sumWY2 / sumW2) / naturalH;
+        } else {
+          // Fallback to initial weighted centroid if filtering too aggressive
+          normalizedCenterX = cx / naturalW;
+          normalizedCenterY = cy / naturalH;
+        }
       } else {
         normalizedCenterX = 0.5;
         normalizedCenterY = 0.5;
@@ -250,19 +297,77 @@
     centerY = normalizedCenterY * curH;
   }
 
-  function updateImageZoom() {
+  function updateImageZoom(anchorClientX, anchorClientY) {
     if (!floorplanImage) return;
+    
+    const containerW = floorplanContainer.clientWidth;
+    const containerH = floorplanContainer.clientHeight;
+    const oldImgW = floorplanImage.offsetWidth || 1;
+    const oldImgH = floorplanImage.offsetHeight || 1;
+    
+    // Determine the anchor point in image-ratio space
+    // If an explicit anchor (e.g. mouse cursor) is provided, use it; otherwise use viewport center
+    let ratioX, ratioY;
+    if (typeof anchorClientX === 'number' && typeof anchorClientY === 'number') {
+      // Anchor at the cursor/touch position within the container
+      const containerRect = floorplanContainer.getBoundingClientRect();
+      const localX = anchorClientX - containerRect.left + floorplanContainer.scrollLeft;
+      const localY = anchorClientY - containerRect.top + floorplanContainer.scrollTop;
+      ratioX = localX / oldImgW;
+      ratioY = localY / oldImgH;
+    } else {
+      // Anchor at the current viewport center
+      const viewCenterX = floorplanContainer.scrollLeft + containerW / 2;
+      const viewCenterY = floorplanContainer.scrollTop + containerH / 2;
+      ratioX = viewCenterX / oldImgW;
+      ratioY = viewCenterY / oldImgH;
+    }
+    
+    // Clamp ratios to valid range
+    ratioX = Math.max(0, Math.min(1, ratioX));
+    ratioY = Math.max(0, Math.min(1, ratioY));
+    
+    // Apply zoom
     floorplanImage.style.width = imageZoom + '%';
     floorplanImage.style.maxWidth = 'none';
     
     // Recalculate pixel center position anchored to normalized coordinates
     calculateCenterPx();
+    
+    // Calculate new scroll to keep the anchor point at the same screen position
+    const newImgW = floorplanImage.offsetWidth;
+    const newImgH = floorplanImage.offsetHeight;
+    
+    if (typeof anchorClientX === 'number' && typeof anchorClientY === 'number') {
+      // Keep the cursor-pointed pixel at the same screen position
+      const containerRect = floorplanContainer.getBoundingClientRect();
+      const screenOffsetX = anchorClientX - containerRect.left;
+      const screenOffsetY = anchorClientY - containerRect.top;
+      floorplanContainer.scrollLeft = ratioX * newImgW - screenOffsetX;
+      floorplanContainer.scrollTop = ratioY * newImgH - screenOffsetY;
+    } else {
+      // Keep the viewport center at the same image point
+      floorplanContainer.scrollLeft = ratioX * newImgW - containerW / 2;
+      floorplanContainer.scrollTop = ratioY * newImgH - containerH / 2;
+    }
+    
     updateOverlayPosition();
   }
 
   function setupOverlay() {
     calculateCenterPx();
     updateOverlayPosition();
+  }
+
+  function scrollToCenter() {
+    // Scroll the viewport so the detected center of the drawing is visible in the middle
+    if (!floorplanContainer || !floorplanImage) return;
+    const containerW = floorplanContainer.clientWidth;
+    const containerH = floorplanContainer.clientHeight;
+    const targetScrollX = centerX - containerW / 2;
+    const targetScrollY = centerY - containerH / 2;
+    floorplanContainer.scrollLeft = Math.max(0, targetScrollX);
+    floorplanContainer.scrollTop = Math.max(0, targetScrollY);
   }
 
   function updateOverlayPosition() {
@@ -324,10 +429,10 @@
   function handleWheelZoom(e) {
     e.preventDefault();
     if (e.ctrlKey) {
-      // Ctrl + Wheel: Zoom floorplan image
+      // Ctrl + Wheel: Zoom floorplan image at cursor position (Google Maps style)
       imageZoom = Math.max(50, Math.min(300, imageZoom + (e.deltaY < 0 ? 10 : -10)));
       if (imageZoomSlider) imageZoomSlider.value = imageZoom;
-      updateImageZoom();
+      updateImageZoom(e.clientX, e.clientY);
     } else {
       // Normal Wheel: Zoom star chart
       const zoomDelta = e.deltaY < 0 ? 15 : -15;

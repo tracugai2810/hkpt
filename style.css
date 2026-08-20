@@ -822,12 +822,16 @@ select.input-field {
   position: relative;
   width: 100%;
   min-height: 300px;
-  max-height: 540px;
+  max-height: 80vh;
+  max-height: 80dvh;
   background: #f8fafc;
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-sm);
   overflow: auto;
+  scroll-behavior: auto;
   cursor: default;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
 }
 
 .floorplan-wrapper {
