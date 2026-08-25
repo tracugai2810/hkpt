@@ -170,7 +170,31 @@
   }
 
   /**
-   * Draws a star trio badge: [Sao Sơn (Vàng)] [Sao Vận (Lớn)] [Sao Hướng (Đỏ)]
+   * Draws a flat tail crossbar (đuôi ngang) at the TỌA end perpendicular to the radial ray.
+   */
+  function drawTailBar(ctx, cx, cy, radius, compassDeg, length, color, lineWidth) {
+    const pos = getXY(cx, cy, radius, compassDeg);
+    const angle = compassToCanvasAngle(compassDeg);
+    const perpAngle = angle + Math.PI / 2;
+    const half = length / 2;
+    const x1 = pos.x + half * Math.cos(perpAngle);
+    const y1 = pos.y + half * Math.sin(perpAngle);
+    const x2 = pos.x - half * Math.cos(perpAngle);
+    const y2 = pos.y - half * Math.sin(perpAngle);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth || 4;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /**
+   * Draws a star trio badge: [Sao Sơn (Xanh Dương)] [Sao Vận (Lớn)] [Sao Hướng (Đỏ)]
    * positioned directly in the given direction sector.
    */
   function drawSectorStarTrio(ctx, x, y, rotation, s, son, van, huong, isCenter) {
@@ -182,18 +206,18 @@
 
     const offsetSide = isCenter ? 26 * s : 24 * s;
 
-    // 1. Sao Sơn (Left) - Yellow Badge
+    // 1. Sao Sơn (Left) - Blue Rounded Badge (đồng bộ màu Xanh với TỌA)
     const sonW = 20 * s;
     const sonH = 22 * s;
-    ctx.fillStyle = '#facc15';
-    ctx.strokeStyle = '#ca8a04';
+    ctx.fillStyle = '#1d4ed8';
+    ctx.strokeStyle = '#1e40af';
     ctx.lineWidth = 1 * s;
     ctx.beginPath();
     drawRoundRect(ctx, -offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3 * s);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#ffffff';
     ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -321,9 +345,9 @@
         ctx.fillText('HƯỚNG', 0, 0);
         ctx.restore();
 
-        // TỌA (Sitting)
+        // TỌA (Sitting) - Flat tail bar (đuôi ngang)
         drawRadialLine(ctx, cx, cy, 0, R_OUTER + 14 * s, sittingDegree, '#1d4ed8', 3.5 * s);
-        drawArrowhead(ctx, cx, cy, R_OUTER + 16 * s, sittingDegree, 16 * s, '#1d4ed8');
+        drawTailBar(ctx, cx, cy, R_OUTER + 14 * s, sittingDegree, 24 * s, '#1d4ed8', 4 * s);
 
         const toaPos = getXY(cx, cy, R_OUTER - 26 * s, sittingDegree);
         ctx.save();
@@ -469,9 +493,9 @@
       ctx.fillText('HƯỚNG', 0, 0);
       ctx.restore();
 
-      // TỌA (Sitting) - Heavy Blue ray into center
+      // TỌA (Sitting) - Heavy Blue ray with flat tail crossbar (đuôi ngang)
       drawRadialLine(ctx, cx, cy, 0, R_OUTER + 12 * s, sittingDegree, '#1d4ed8', 3.8 * s);
-      drawArrowhead(ctx, cx, cy, R_OUTER + 14 * s, sittingDegree, 18 * s, '#1d4ed8');
+      drawTailBar(ctx, cx, cy, R_OUTER + 12 * s, sittingDegree, 26 * s, '#1d4ed8', 4.5 * s);
 
       // TỌA badge
       const toaPos = getXY(cx, cy, R_OUTER - 26 * s, sittingDegree);

@@ -54,7 +54,8 @@ body {
 
 /* ---- App Container ---- */
 .app-container {
-  max-width: 600px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   padding: 16px;
   padding-bottom: 40px;
@@ -64,6 +65,8 @@ body {
 .app-header {
   text-align: center;
   padding: 24px 0 16px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .header-title {
@@ -93,7 +96,9 @@ body {
   padding: 20px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  margin-bottom: 16px;
+  margin: 0 auto 16px;
+  max-width: 600px;
+  width: 100%;
 }
 
 .input-grid {
@@ -679,7 +684,7 @@ select.input-field {
 
 @media (min-width: 768px) {
   .app-container {
-    max-width: 560px;
+    max-width: min(1380px, 95vw);
     padding: 24px;
   }
 
