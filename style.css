@@ -271,25 +271,28 @@ select.input-field {
   color: #dc2626;
 }
 
-/* ---- Export Area (Replaces standard chart UI, captured instantly) ---- */
+/* ---- Export Area (Main Interactive Tinh Bàn Display) ---- */
 .export-area {
+  position: relative;
+  background-color: #ffffff; 
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto 0;
+  padding: 20px 16px;
+  box-sizing: border-box;
+  font-family: var(--font-main);
+  color: #000;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.export-area.export-mode {
   position: absolute;
   left: -9999px;
   top: 0;
-  background-color: #ffffff; 
   width: 600px;
-  padding: 30px 25px;
-  box-sizing: border-box;
-  font-family: var(--font-main);
-  margin: 0;
-  color: #000;
   border-radius: 24px;
-}
-
-.export-area * {
-  animation: none !important;
-  transition: none !important;
-  opacity: 1 !important;
 }
 
 .export-area.hidden {
