@@ -189,7 +189,7 @@
     ctx.strokeStyle = '#ca8a04';
     ctx.lineWidth = 1 * s;
     ctx.beginPath();
-    ctx.roundRect(-offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3 * s);
+    drawRoundRect(ctx, -offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3 * s);
     ctx.fill();
     ctx.stroke();
 

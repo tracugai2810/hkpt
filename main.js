@@ -282,48 +282,72 @@
     }
     
     // Render compass around the chart grid (standard view keeps 3x3 grid)
-    const compassCanvas = document.getElementById('compassCanvas');
-    if (compassCanvas && window.Compass) {
-      window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace, { showSectorStars: false });
+    try {
+      const compassCanvas = document.getElementById('compassCanvas');
+      if (compassCanvas && window.Compass) {
+        window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace, { showSectorStars: false });
+      }
+    } catch (e) {
+      console.error('Compass render error:', e);
     }
     
     // Update floorplan overlay if active
-    if (window.FloorPlan && window.FloorPlan.update) {
-      window.FloorPlan.update();
+    try {
+      if (window.FloorPlan && window.FloorPlan.update) {
+        window.FloorPlan.update();
+      }
+    } catch (e) {
+      console.error('FloorPlan update error:', e);
     }
     
     // Info values
-    document.getElementById('infoVan').textContent = result.van;
+    const infoVan = document.getElementById('infoVan');
+    if (infoVan) infoVan.textContent = result.van;
     
-    // Degree display
-    document.getElementById('infoDegree').textContent = `${result.facingDegree}°`;
+    const infoDegree = document.getElementById('infoDegree');
+    if (infoDegree) infoDegree.textContent = `${result.facingDegree}°`;
     
-    document.getElementById('infoYear').textContent = currentYear || '-';
-    document.getElementById('infoMonth').textContent = currentMonth || '-';
-    document.getElementById('infoDay').textContent = currentDay || '-';
+    const infoYear = document.getElementById('infoYear');
+    if (infoYear) infoYear.textContent = currentYear || '-';
+    
+    const infoMonth = document.getElementById('infoMonth');
+    if (infoMonth) infoMonth.textContent = currentMonth || '-';
+    
+    const infoDay = document.getElementById('infoDay');
+    if (infoDay) infoDay.textContent = currentDay || '-';
+    
     const hourmap = {1:'Tý', 2:'Sửu', 3:'Dần', 4:'Mão', 5:'Thìn', 6:'Tỵ', 7:'Ngọ', 8:'Mùi', 9:'Thân', 10:'Dậu', 11:'Tuất', 12:'Hợi'};
-    document.getElementById('infoHour').textContent = hourmap[currentHour] || '-';
+    const infoHour = document.getElementById('infoHour');
+    if (infoHour) infoHour.textContent = hourmap[currentHour] || '-';
 
     // Render Loan Dau (Exterior landscape) recommendation
-    const loanDauSection = document.getElementById('loanDauSection');
-    if (loanDauSection && window.LoanDauRules) {
-      const loanDauAnalysis = window.LoanDauRules.analyze(result);
-      if (loanDauAnalysis) {
-        loanDauSection.innerHTML = window.LoanDauRules.renderHTML(loanDauAnalysis);
-        loanDauSection.classList.remove('hidden');
-        window.LoanDauRules.initTabs();
+    try {
+      const loanDauSection = document.getElementById('loanDauSection');
+      if (loanDauSection && window.LoanDauRules) {
+        const loanDauAnalysis = window.LoanDauRules.analyze(result);
+        if (loanDauAnalysis) {
+          loanDauSection.innerHTML = window.LoanDauRules.renderHTML(loanDauAnalysis);
+          loanDauSection.classList.remove('hidden');
+          window.LoanDauRules.initTabs();
+        }
       }
+    } catch (e) {
+      console.error('LoanDauRules error:', e);
     }
 
     // Render Feng Shui interpretation if module available
-    const interpretationSection = document.getElementById('interpretationSection');
-    if (interpretationSection && window.FengShuiRules) {
-      const analysis = window.FengShuiRules.analyze(result);
-      if (analysis) {
-        interpretationSection.innerHTML = window.FengShuiRules.renderHTML(analysis);
-        interpretationSection.classList.remove('hidden');
-        window.FengShuiRules.initTabs();
+    try {
+      const interpretationSection = document.getElementById('interpretationSection');
+      if (interpretationSection && window.FengShuiRules) {
+        const analysis = window.FengShuiRules.analyze(result);
+        if (analysis) {
+          interpretationSection.innerHTML = window.FengShuiRules.renderHTML(analysis);
+          interpretationSection.classList.remove('hidden');
+          window.FengShuiRules.initTabs();
+        }
       }
+    } catch (e) {
+      console.error('FengShuiRules error:', e);
     }
   }
 
