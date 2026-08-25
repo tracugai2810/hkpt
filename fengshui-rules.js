@@ -385,34 +385,73 @@
       // --- 8. PHÒNG HỌC, LÀM VIỆC & PHÒNG THỜ ---
       if (!isCenter) {
         // Phòng học / Bàn làm việc (Văn Xương)
+        let studyRating = 'Bình';
+        let studyScore = 50;
+        let studyDesc = '';
+        let studyBadges = [];
+
         if (isVanXuong) {
-          analysis.studies.push({
-            palace: p, name, dir, son, huong, van,
-            rating: 'Cực Tốt (Văn Xương Đắc Vị)',
-            score: 100,
-            desc: `Cung vị có tổ hợp sao <strong>Văn Xương [1-4]</strong> tuyệt hảo. Bố trí bàn học, bàn làm việc, tủ sách tại đây sẽ kích hoạt trí tuệ, thi cử đỗ đạt, công danh thăng tiến rực rỡ.`,
-            badges: [{ text: 'Văn Xương Đắc Vị', type: 'success' }]
-          });
-        } else if ([1, 4, 6].includes(son) || [1, 4, 6].includes(huong)) {
-          analysis.studies.push({
-            palace: p, name, dir, son, huong, van,
-            rating: 'Tốt',
-            score: 80,
-            desc: `Cung vị có sao Trí tuệ - Công danh (${son}/${huong}). Thích hợp đặt bàn học hoặc không gian làm việc tĩnh tâm.`,
-            badges: [{ text: 'Khuyến nghị', type: 'primary' }]
-          });
+          studyRating = 'Văn Xương Đắc Vị';
+          studyScore = 100;
+          studyDesc = `Cung vị đắc tổ hợp <strong>Văn Xương [1-4]</strong> tuyệt hảo. Bố trí bàn học, bàn làm việc, tủ sách tại đây sẽ kích hoạt trí tuệ hanh thông, thi cử đỗ đạt, công danh thăng tiến rực rỡ.`;
+          studyBadges.push({ text: 'Văn Xương Đắc Vị', type: 'success' });
+        } else if ([1, 4].includes(son) || [1, 4].includes(huong)) {
+          studyRating = 'Tốt';
+          studyScore = 80;
+          studyDesc = `Cung vị có sao Trí tuệ (${[1, 4].filter(s => s === son || s === huong).join(', ')}). Rất tốt cho việc học tập, làm việc tập trung và tư duy sáng tạo.`;
+          studyBadges.push({ text: 'Cát lợi', type: 'primary' });
+        } else if (son === 6 || huong === 6) {
+          studyRating = 'Khá Tốt';
+          studyScore = 75;
+          studyDesc = `Cung vị có sao Lục Bạch Kim (6) chủ về công danh, kỷ luật và sự nghiệp.`;
+          studyBadges.push({ text: 'Vượng công danh', type: 'primary' });
+        } else if (saoBaoSat.includes(son) || saoBaoSat.includes(huong)) {
+          studyRating = 'Không Tốt (Phạm Sát)';
+          studyScore = 25;
+          studyDesc = `Cung vị phạm sát tinh (${son === 2 || huong === 2 ? 'Nhị Hắc' : 'Ngũ Hoàng'}). Người ngồi học dễ mệt mỏi, phân tâm, thành tích giảm sút.`;
+          studyBadges.push({ text: 'Tránh đặt', type: 'danger' });
+        } else {
+          studyRating = 'Bình';
+          studyScore = 50;
+          studyDesc = `Cung vị trung bình, có thể bố trí bàn học nếu các cung tốt hơn đã ưu tiên cho phòng ngủ.`;
         }
 
+        analysis.studies.push({
+          palace: p, name, dir, son, huong, van,
+          rating: studyRating, score: studyScore, desc: studyDesc, badges: studyBadges
+        });
+
         // Phòng thờ (Cần thanh tịnh, tôn nghiêm)
-        if (son === saoVuongKhi || saoCatTinh.includes(son)) {
-          analysis.altars.push({
-            palace: p, name, dir, son, huong, van,
-            rating: son === saoVuongKhi ? 'Xuất Sắc' : 'Tốt',
-            score: son === saoVuongKhi ? 95 : 80,
-            desc: `Sơn tinh cát lành <strong>(${son})</strong> hỗ trợ linh khí gia tiên, gia đạo êm ấm bình an, phúc lộc trường tồn. Tránh đặt đối diện WC hoặc bếp lò.`,
-            badges: [{ text: son === saoVuongKhi ? 'Trang trọng nhất' : 'Thanh tịnh', type: 'success' }]
-          });
+        let altarRating = 'Bình';
+        let altarScore = 50;
+        let altarDesc = '';
+        let altarBadges = [];
+
+        if (son === saoVuongKhi) {
+          altarRating = 'Xuất Sắc';
+          altarScore = 95;
+          altarDesc = `Sơn tinh <strong>Vượng Khí (${son})</strong>. Linh khí gia tiên che chở, phúc đức dồi dào, gia đạo an khang thịnh vượng.`;
+          altarBadges.push({ text: 'Tối ưu nhất', type: 'success' });
+        } else if (saoCatTinh.includes(son)) {
+          altarRating = 'Tốt';
+          altarScore = 80;
+          altarDesc = `Sơn tinh cát lành (${son}) mang lại năng lượng thanh tịnh, tôn nghiêm và êm ấm cho gia đình.`;
+          altarBadges.push({ text: 'Thanh tịnh', type: 'primary' });
+        } else if (saoBaoSat.includes(son)) {
+          altarRating = 'Tránh Đặt';
+          altarScore = 20;
+          altarDesc = `Sơn tinh phạm sát tinh (${son === 2 ? 'Nhị Hắc' : 'Ngũ Hoàng'}). Không nên đặt bàn thờ tại đây để tránh uế tạp nơi thờ cúng.`;
+          altarBadges.push({ text: 'Tránh đặt', type: 'danger' });
+        } else {
+          altarRating = 'Bình';
+          altarScore = 50;
+          altarDesc = `Vị trí trung bình. Bàn thờ cần đặt nơi cao ráo, thanh tịnh, tránh đối diện WC hoặc bếp lò.`;
         }
+
+        analysis.altars.push({
+          palace: p, name, dir, son, huong, van,
+          rating: altarRating, score: altarScore, desc: altarDesc, badges: altarBadges
+        });
       }
 
       // --- TỔNG HỢP CUNG VỊ ---
@@ -697,12 +736,14 @@
         
         <div class="pal-items-list">
           ${pal.door ? `<div class="pal-item-row"><span class="item-name">🚪 Cửa chính:</span> <span class="item-status ${getStatusClass(pal.door.rating)}">${pal.door.rating}</span></div>` : ''}
+          ${pal.livingRoom ? `<div class="pal-item-row"><span class="item-name">🛋️ Phòng khách:</span> <span class="item-status ${getStatusClass(pal.livingRoom.rating)}">${pal.livingRoom.rating}</span></div>` : ''}
+          ${pal.balcony ? `<div class="pal-item-row"><span class="item-name">🌅 Ban công / Cửa sổ:</span> <span class="item-status ${getStatusClass(pal.balcony.rating)}">${pal.balcony.rating}</span></div>` : ''}
           ${pal.bedroom ? `<div class="pal-item-row"><span class="item-name">🛏️ Phòng ngủ:</span> <span class="item-status ${getStatusClass(pal.bedroom.rating)}">${pal.bedroom.rating}</span></div>` : ''}
           ${pal.kitchen ? `<div class="pal-item-row"><span class="item-name">🍳 Bếp nấu:</span> <span class="item-status ${getStatusClass(pal.kitchen.rating)}">${pal.kitchen.rating}</span></div>` : ''}
           ${pal.stair ? `<div class="pal-item-row"><span class="item-name">🪜 Cầu thang:</span> <span class="item-status ${getStatusClass(pal.stair.rating)}">${pal.stair.rating}</span></div>` : ''}
           ${pal.toilet ? `<div class="pal-item-row"><span class="item-name">🚿 Vệ sinh:</span> <span class="item-status ${getStatusClass(pal.toilet.rating)}">${pal.toilet.rating}</span></div>` : ''}
-          ${pal.study ? `<div class="pal-item-row"><span class="item-name">📚 Bàn học:</span> <span class="item-status status-good">Văn Xương Đắc Vị</span></div>` : ''}
-          ${pal.altar ? `<div class="pal-item-row"><span class="item-name">🕯️ Bàn thờ:</span> <span class="item-status status-good">Thanh tịnh</span></div>` : ''}
+          ${pal.study ? `<div class="pal-item-row"><span class="item-name">📚 Bàn học:</span> <span class="item-status ${getStatusClass(pal.study.rating)}">${pal.study.rating}</span></div>` : ''}
+          ${pal.altar ? `<div class="pal-item-row"><span class="item-name">🕯️ Bàn thờ:</span> <span class="item-status ${getStatusClass(pal.altar.rating)}">${pal.altar.rating}</span></div>` : ''}
         </div>
       </div>
     `;
@@ -710,10 +751,10 @@
 
   function getStatusClass(rating) {
     if (!rating) return '';
-    if (rating.includes('Xuất Sắc') || rating.includes('Rất Tốt') || rating.includes('Cực Tốt') || rating.includes('Dĩ Độc Trị Độc')) return 'status-good';
-    if (rating.includes('Tốt') || rating.includes('Cát')) return 'status-primary';
-    if (rating.includes('Lưu Ý') || rating.includes('Không Khuyến Khích')) return 'status-warn';
-    if (rating.includes('Đại Kỵ') || rating.includes('Rất Xấu') || rating.includes('Cực Hung') || rating.includes('Cấm')) return 'status-danger';
+    if (rating.includes('Xuất Sắc') || rating.includes('Rất Tốt') || rating.includes('Cực Tốt') || rating.includes('Văn Xương') || rating.includes('Dĩ Độc Trị Độc')) return 'status-good';
+    if (rating.includes('Tốt') || rating.includes('Cát') || rating.includes('Khá Tốt')) return 'status-primary';
+    if (rating.includes('Lưu Ý') || rating.includes('Không Khuyến Khích') || rating.includes('Hạn Chế')) return 'status-warn';
+    if (rating.includes('Đại Kỵ') || rating.includes('Rất Xấu') || rating.includes('Cực Hung') || rating.includes('Cấm') || rating.includes('Không Tốt') || rating.includes('Tránh Đặt') || rating.includes('Sát Tinh') || rating.includes('Phạm Sát')) return 'status-danger';
     return 'status-neutral';
   }
 

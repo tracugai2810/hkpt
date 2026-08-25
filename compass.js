@@ -262,21 +262,21 @@
         drawRadialLine(ctx, cx, cy, 0, R_OUTER, boundDeg, '#0f172a', 2.0 * s);
       }
 
-      // 8 Direction text - BOLD with white halo for maximum readability on CAD drawings
+      // 8 Direction text - Compact short abbreviations (B, ĐB, Đ, ĐN, N, TN, T, TB) with white halo
       const DIR_NAMES_MINIMAL = [
-        { name: 'BẮC (B)', center: 0 },
-        { name: 'ĐÔNG BẮC (ĐB)', center: 45 },
-        { name: 'ĐÔNG (Đ)', center: 90 },
-        { name: 'ĐÔNG NAM (ĐN)', center: 135 },
-        { name: 'NAM (N)', center: 180 },
-        { name: 'TÂY NAM (TN)', center: 225 },
-        { name: 'TÂY (T)', center: 270 },
-        { name: 'TÂY BẮC (TB)', center: 315 },
+        { name: 'B', center: 0 },
+        { name: 'ĐB', center: 45 },
+        { name: 'Đ', center: 90 },
+        { name: 'ĐN', center: 135 },
+        { name: 'N', center: 180 },
+        { name: 'TN', center: 225 },
+        { name: 'T', center: 270 },
+        { name: 'TB', center: 315 },
       ];
 
       for (let i = 0; i < 8; i++) {
         const dir = DIR_NAMES_MINIMAL[i];
-        const font = `900 ${Math.round(15 * s)}px "Inter", "Noto Sans", sans-serif`;
+        const font = `900 ${Math.round(18 * s)}px "Inter", "Noto Sans", sans-serif`;
         drawText(ctx, cx, cy, R_DIR_TEXT, dir.center, dir.name, font, '#0f172a', true);
       }
 

@@ -887,9 +887,10 @@ select.input-field {
 .floorplan-container {
   position: relative;
   width: 100%;
-  min-height: 380px;
-  max-height: 80vh;
-  max-height: 80dvh;
+  min-height: 400px;
+  height: 560px;
+  max-height: 75vh;
+  max-height: 75dvh;
   background: #f8fafc;
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-sm);
@@ -898,21 +899,48 @@ select.input-field {
   cursor: default;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x pan-y;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .floorplan-wrapper {
   position: relative;
-  width: fit-content;
-  min-width: 100%;
-  margin: 0 auto;
+  margin: auto;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .floorplan-image {
   display: block;
-  width: 100%;
-  height: auto;
+  max-width: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.fp-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fp-mini-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+  padding: 1px 6px;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+}
+
+.fp-mini-btn:hover {
+  background: #ccfbf1;
+  border-color: var(--accent);
 }
 
 .floorplan-helper-canvas {

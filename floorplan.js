@@ -20,6 +20,8 @@
   let overlaySize = 240; // px
   let overlayOpacity = 0.7;
   let imageZoom = 100; // percent (50 - 300)
+  let baseFitWidth = 0;
+  let baseFitHeight = 0;
   let showGuideLines = true;
   let isMinimalMode = false;
   let isFullscreen = false;
@@ -39,7 +41,7 @@
   let btnUploadPlan, floorplanFileInput, floorplanSection, floorplanContainer, floorplanWrapper;
   let floorplanImage, floorplanHelperCanvas, floorplanOverlay, floorplanCompass;
   let centerMarker, sizeSlider, imageZoomSlider, opacitySlider, rotationDisplay;
-  let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, btnToggleFullscreen;
+  let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, btnToggleFullscreen, btnFitView;
   let transparentBgCheckbox, guideLinesCheckbox, minimalModeCheckbox;
   let centerToolsPanel, centerToolDesc;
   let centerBoxActions, centerPolyActions, centerFreeActions;
@@ -71,6 +73,7 @@
     btnResetFloorplan = document.getElementById('btnResetFloorplan');
     btnExportFloorplan = document.getElementById('btnExportFloorplan');
     btnToggleFullscreen = document.getElementById('btnToggleFullscreen');
+    btnFitView = document.getElementById('btnFitView');
 
     // Center Tools elements
     centerToolsPanel = document.getElementById('centerToolsPanel');
@@ -162,13 +165,16 @@
     if (btnResetFloorplan) {
       btnResetFloorplan.addEventListener('click', function() {
         currentRotation = 0;
-        imageZoom = 100;
         boxPoints = [];
         polygonPoints = [];
-        if (imageZoomSlider) imageZoomSlider.value = 100;
-        updateImageZoom();
-        updateOverlayPosition();
-        renderHelperCanvas();
+        fitImageToContainer();
+      });
+    }
+
+    // Fit View (Vừa Khung) button
+    if (btnFitView) {
+      btnFitView.addEventListener('click', function() {
+        fitImageToContainer();
       });
     }
 
@@ -210,9 +216,14 @@
 
     // 16. Window resize listener to keep overlay and canvas aligned
     window.addEventListener('resize', debounce(() => {
-      calculateCenterPx();
-      updateOverlayPosition();
-      renderHelperCanvas();
+      if (imageZoom === 100) {
+        fitImageToContainer();
+      } else {
+        computeBaseFitSize();
+        calculateCenterPx();
+        updateOverlayPosition();
+        renderHelperCanvas();
+      }
     }, 150));
 
     isInitialized = true;
@@ -236,11 +247,15 @@
       }
     }
     setTimeout(() => {
-      calculateCenterPx();
-      updateOverlayPosition();
-      renderHelperCanvas();
-      scrollToCenter();
-    }, 100);
+      if (imageZoom === 100) {
+        fitImageToContainer();
+      } else {
+        computeBaseFitSize();
+        calculateCenterPx();
+        updateOverlayPosition();
+        renderHelperCanvas();
+      }
+    }, 120);
   }
 
   function toggleAdjustCenter() {
@@ -326,19 +341,16 @@
         if (appContainer) appContainer.classList.add('has-floorplan');
 
         floorplanImage.src = img.src;
-        imageZoom = 100;
         boxPoints = [];
         polygonPoints = [];
-        if (imageZoomSlider) imageZoomSlider.value = 100;
-        floorplanImage.style.width = '100%';
         
         setTimeout(() => {
+          fitImageToContainer();
           detectCenter(floorplanImage);
           setupOverlay();
-          scrollToCenter();
           renderHelperCanvas();
           floorplanSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 120);
+        }, 100);
       };
       img.src = event.target.result;
     };
@@ -453,20 +465,57 @@
     currentRotation = 0;
   }
 
+  function computeBaseFitSize() {
+    if (!floorplanImage || !floorplanContainer) return;
+    const naturalW = floorplanImage.naturalWidth || 600;
+    const naturalH = floorplanImage.naturalHeight || 400;
+    const containerW = floorplanContainer.clientWidth || 600;
+    const containerH = floorplanContainer.clientHeight || 500;
+
+    const availW = Math.max(160, containerW - 32);
+    const availH = Math.max(160, containerH - 32);
+
+    const scale = Math.min(availW / naturalW, availH / naturalH);
+    baseFitWidth = Math.max(80, Math.round(naturalW * scale));
+    baseFitHeight = Math.max(80, Math.round(naturalH * scale));
+  }
+
+  function fitImageToContainer() {
+    if (!floorplanImage || !floorplanImage.naturalWidth) return;
+    computeBaseFitSize();
+    imageZoom = 100;
+    if (imageZoomSlider) imageZoomSlider.value = 100;
+
+    floorplanImage.style.width = baseFitWidth + 'px';
+    floorplanImage.style.height = baseFitHeight + 'px';
+
+    // Auto-scale star chart overlay to cover ~72% of the minimum dimension
+    const minDim = Math.min(baseFitWidth, baseFitHeight);
+    overlaySize = Math.max(80, Math.min(650, Math.round(minDim * 0.72)));
+    if (sizeSlider) sizeSlider.value = overlaySize;
+
+    calculateCenterPx();
+    updateOverlayPosition();
+    renderHelperCanvas();
+  }
+
   function calculateCenterPx() {
-    const curW = floorplanImage.offsetWidth || floorplanImage.width || 400;
-    const curH = floorplanImage.offsetHeight || floorplanImage.height || 300;
+    const curW = floorplanImage.offsetWidth || baseFitWidth || floorplanImage.width || 400;
+    const curH = floorplanImage.offsetHeight || baseFitHeight || floorplanImage.height || 300;
     centerX = normalizedCenterX * curW;
     centerY = normalizedCenterY * curH;
   }
 
   function updateImageZoom(anchorClientX, anchorClientY) {
     if (!floorplanImage) return;
+    if (!baseFitWidth || !baseFitHeight) {
+      computeBaseFitSize();
+    }
     
     const containerW = floorplanContainer.clientWidth;
     const containerH = floorplanContainer.clientHeight;
-    const oldImgW = floorplanImage.offsetWidth || 1;
-    const oldImgH = floorplanImage.offsetHeight || 1;
+    const oldImgW = floorplanImage.offsetWidth || baseFitWidth || 1;
+    const oldImgH = floorplanImage.offsetHeight || baseFitHeight || 1;
     
     // Determine the anchor point in image-ratio space
     let ratioX, ratioY;
@@ -486,17 +535,18 @@
     ratioX = Math.max(0, Math.min(1, ratioX));
     ratioY = Math.max(0, Math.min(1, ratioY));
     
-    // Apply zoom
-    floorplanImage.style.width = imageZoom + '%';
-    floorplanImage.style.maxWidth = 'none';
+    // Apply zoom relative to baseFit dimensions
+    const zoomRatio = imageZoom / 100;
+    const newImgW = Math.round(baseFitWidth * zoomRatio);
+    const newImgH = Math.round(baseFitHeight * zoomRatio);
+    
+    floorplanImage.style.width = newImgW + 'px';
+    floorplanImage.style.height = newImgH + 'px';
     
     // Recalculate pixel center
     calculateCenterPx();
     
     // Scroll to preserve anchor
-    const newImgW = floorplanImage.offsetWidth;
-    const newImgH = floorplanImage.offsetHeight;
-    
     if (typeof anchorClientX === 'number' && typeof anchorClientY === 'number') {
       const containerRect = floorplanContainer.getBoundingClientRect();
       const screenOffsetX = anchorClientX - containerRect.left;
