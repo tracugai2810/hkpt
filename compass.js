@@ -89,6 +89,25 @@
   }
 
   /**
+   * Safe rounded rect helper that supports all browsers.
+   */
+  function drawRoundRect(ctx, x, y, w, h, r) {
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, w, h, r);
+    } else {
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+    }
+  }
+
+  /**
    * Draws a radial line between two radii at a specified compass degree.
    */
   function drawRadialLine(ctx, cx, cy, r1, r2, compassDeg, color, lineWidth, dashArray) {
@@ -293,7 +312,7 @@
         ctx.translate(huongPos.x, huongPos.y);
         ctx.fillStyle = '#dc2626';
         ctx.beginPath();
-        ctx.roundRect(-24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
+        drawRoundRect(ctx, -24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
@@ -311,7 +330,7 @@
         ctx.translate(toaPos.x, toaPos.y);
         ctx.fillStyle = '#1d4ed8';
         ctx.beginPath();
-        ctx.roundRect(-20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
+        drawRoundRect(ctx, -20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
@@ -441,7 +460,7 @@
       ctx.translate(huongPos.x, huongPos.y);
       ctx.fillStyle = '#dc2626';
       ctx.beginPath();
-      ctx.roundRect(-24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
+      drawRoundRect(ctx, -24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
@@ -460,7 +479,7 @@
       ctx.translate(toaPos.x, toaPos.y);
       ctx.fillStyle = '#1d4ed8';
       ctx.beginPath();
-      ctx.roundRect(-20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
+      drawRoundRect(ctx, -20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;

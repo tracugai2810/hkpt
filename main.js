@@ -98,8 +98,8 @@
     // Initial Van calculation
     updateVan();
     
-    // Do not auto-calculate on load
-    // calculate();
+    // Auto-calculate initial chart on load
+    calculate();
     
     // Initialize FloorPlan module
     if (window.FloorPlan) {
@@ -154,16 +154,16 @@
   }
 
   function renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai) {
-    // Hide image and actions initially
     if (imageResultContainer) imageResultContainer.classList.add('hidden');
-    if (actionContainer) actionContainer.classList.add('hidden');
     
-    // Prepare exportArea but keep it offscreen during capture
+    // Display exportArea directly on screen
     exportArea.classList.remove('hidden');
-    exportArea.style.position = 'absolute';
-    exportArea.style.left = '-9999px';
-    exportArea.style.top = '0';
-    exportArea.classList.add('export-mode'); // Force high contrast always
+    exportArea.classList.remove('export-mode');
+    exportArea.style.position = '';
+    exportArea.style.left = '';
+    exportArea.style.top = '';
+    
+    if (actionContainer) actionContainer.classList.remove('hidden');
     
     // Warning
     if (result.chartType === 'KHONG_VONG') {
@@ -325,52 +325,6 @@
         window.FengShuiRules.initTabs();
       }
     }
-
-    // Auto capture image
-    autoCaptureImage();
-  }
-
-  function autoCaptureImage() {
-    btnCalculate.innerText = 'Đang tạo ảnh tinh bàn...';
-    btnCalculate.disabled = true;
-
-    // Give browser a moment to apply styles
-    setTimeout(() => {
-      html2canvas(exportArea, {
-        scale: 4, // Very high resolution (8x default)
-        useCORS: true,
-        logging: false,
-        width: 580, // Match updated export-area width
-      }).then(canvas => {
-        // Revert UI positioning
-        exportArea.classList.remove('export-mode');
-        exportArea.style.position = '';
-        exportArea.style.left = '';
-        exportArea.style.top = '';
-        exportArea.classList.add('hidden'); // Hide the DOM version
-        
-        // Show Image
-        if (finalImage && imageResultContainer) {
-          finalImage.src = canvas.toDataURL('image/png', 1.0);
-          imageResultContainer.classList.remove('hidden');
-        }
-
-        if (actionContainer) actionContainer.classList.remove('hidden');
-
-        btnCalculate.innerText = 'Lập Tinh Bàn';
-        btnCalculate.disabled = false;
-      }).catch(err => {
-        console.error('Error generating image', err);
-        btnCalculate.innerText = 'Lập Tinh Bàn';
-        btnCalculate.disabled = false;
-        
-        // Fallback to DOM if image fails
-        exportArea.classList.remove('export-mode');
-        exportArea.style.position = '';
-        exportArea.style.left = '';
-        exportArea.style.top = '';
-      });
-    }, 150);
   }
 
   function dataURItoBlob(dataURI) {
@@ -471,9 +425,34 @@
   window.saveOrShareImage = saveOrShareImage;
 
   function downloadChart() {
-    if (!finalImage || !finalImage.src) return;
-    const filename = `tinhban_${document.getElementById('inputVan').value}_${document.getElementById('inputDegree').value}.png`;
-    saveOrShareImage(finalImage.src, filename, 'Tinh Bàn Huyền Không');
+    if (!exportArea) return;
+    const origHTML = btnDownload.innerHTML;
+    btnDownload.innerText = 'Đang tạo ảnh...';
+    btnDownload.disabled = true;
+
+    // Apply export-mode temporarily for clean snapshot
+    exportArea.classList.add('export-mode');
+
+    setTimeout(() => {
+      html2canvas(exportArea, {
+        scale: 4,
+        useCORS: true,
+        logging: false,
+        width: 580,
+      }).then(canvas => {
+        exportArea.classList.remove('export-mode');
+        btnDownload.innerHTML = origHTML;
+        btnDownload.disabled = false;
+        const filename = `tinhban_${document.getElementById('inputVan').value}_${document.getElementById('inputDegree').value}.png`;
+        saveOrShareImage(canvas, filename, 'Tinh Bàn Huyền Không');
+      }).catch(err => {
+        exportArea.classList.remove('export-mode');
+        btnDownload.innerHTML = origHTML;
+        btnDownload.disabled = false;
+        console.error('Download error:', err);
+        alert('Có lỗi khi tạo ảnh tải về, vui lòng thử lại.');
+      });
+    }, 60);
   }
 
   function copyChartToText() {
