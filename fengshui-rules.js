@@ -498,6 +498,7 @@
     const sSinh = meta.saoSinhKhi_1;
     const sSat = meta.saoBaoSat.join(' & ');
     const sSuy = meta.saoSuyTu.join(', ');
+    const sCat = meta.saoCatTinh ? meta.saoCatTinh.join(', ') : '1, 6, 8, 9';
 
     return `
       <div class="interp-header">
