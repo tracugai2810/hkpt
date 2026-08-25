@@ -553,7 +553,7 @@
         </div>
       ` : ''}
 
-      <!-- Bộ lọc Tabs chuyển đổi 8 khu vực phong thủy -->
+      <!-- Bộ lọc Tabs chuyển đổi các khu vực phong thủy -->
       <div class="interp-tabs-container">
         <div class="interp-tabs-scroll">
           <button type="button" class="interp-tab active" data-tab="doors">🚪 Cửa Chính</button>
@@ -563,7 +563,8 @@
           <button type="button" class="interp-tab" data-tab="kitchens">🍳 Nhà Bếp</button>
           <button type="button" class="interp-tab" data-tab="stairs">🪜 Cầu Thang / Giếng Trời</button>
           <button type="button" class="interp-tab" data-tab="toilets">🚿 Nhà Vệ Sinh</button>
-          <button type="button" class="interp-tab" data-tab="studies">📚 Học & Thờ Cúng</button>
+          <button type="button" class="interp-tab" data-tab="studies">📚 Bàn Học / Làm Việc</button>
+          <button type="button" class="interp-tab" data-tab="altars">🕯️ Phòng Thờ / Bàn Thờ</button>
           <button type="button" class="interp-tab" data-tab="all">🧭 Tổng Hợp 8 Cung</button>
         </div>
       </div>
@@ -638,32 +639,27 @@
         </div>
       </div>
 
-      <!-- Tab 8: Học Tập & Thờ Cúng -->
+      <!-- Tab 8: Bàn Học & Phòng Làm Việc (Văn Xương) -->
       <div class="interp-tab-panel" id="tab-studies">
-        <div class="interp-study-section">
-          <div class="interp-guide-tip">
-            🎯 <strong>Nguyên lý:</strong> Bàn học / làm việc cần đặt tại phương vị <strong>Văn Xương Tinh [1-4] hoặc [4-1]</strong> để kích hoạt trí tuệ, đỗ đạt. Bàn thờ (Thần Vị) cần không gian tối tĩnh, đặt tại cung có <strong>Sơn Tinh cát lành</strong>, tôn nghiêm, tránh nhìn thẳng WC hoặc bếp.
-          </div>
-
-          <h4 class="interp-group-heading">📚 Vị Trí Đặt Bàn Học & Phòng Làm Việc (Văn Xương)</h4>
-          <div class="interp-cards-grid">
-            ${analysis.studies.length > 0 ? 
-              analysis.studies.map(st => renderCardItem(st, 'Góc Học Tập', `Tổ hợp sao [${st.son}-${st.huong}]`)).join('') :
-              '<p class="empty-tip">Các cung hướng khác có thể bố trí bàn học theo hướng hợp mệnh gia chủ.</p>'
-            }
-          </div>
-
-          <h4 class="interp-group-heading" style="margin-top: 24px;">🕯️ Vị Trí Đặt Phòng Thờ / Bàn Thờ (Tôn Nghiêm & Thanh Tịnh)</h4>
-          <div class="interp-cards-grid">
-            ${analysis.altars.length > 0 ?
-              analysis.altars.map(a => renderCardItem(a, 'Bàn Thờ', `Sơn Tinh [${a.son}]`)).join('') :
-              '<p class="empty-tip">Ưu tiên vị trí cao ráo, thanh tịnh, tránh gió lùa và xa khu vệ sinh.</p>'
-            }
-          </div>
+        <div class="interp-guide-tip">
+          🎯 <strong>Nguyên lý:</strong> Bàn học / làm việc cần đặt tại phương vị <strong>Văn Xương Tinh [1-4] hoặc [4-1]</strong> để kích hoạt trí tuệ, đỗ đạt, công danh thăng tiến. Tránh đặt tại cung có sát tinh <strong>Sao ${sSat}</strong> làm phân tâm, giảm sút hiệu quả.
+        </div>
+        <div class="interp-cards-grid">
+          ${analysis.studies.map(st => renderCardItem(st, 'Góc Học Tập', `Tổ hợp sao [${st.son}-${st.huong}]`)).join('')}
         </div>
       </div>
 
-      <!-- Tab 9: Tổng Hợp 8 Cung -->
+      <!-- Tab 9: Phòng Thờ / Bàn Thờ (Thần Vị) -->
+      <div class="interp-tab-panel" id="tab-altars">
+        <div class="interp-guide-tip">
+          🎯 <strong>Nguyên lý:</strong> Bàn thờ (Thần Vị) là nơi linh thiêng tôn nghiêm, cần không gian tối tĩnh, tọa tại cung có <strong>Sơn Tinh cát lành (Sao ${sVuong} hoặc ${sCat})</strong> để gia đạo an khang, linh khí tổ tiên chở che. Tuyệt đối tránh nhìn thẳng hoặc tựa lưng vào nhà vệ sinh, bếp lò.
+        </div>
+        <div class="interp-cards-grid">
+          ${analysis.altars.map(a => renderCardItem(a, 'Bàn Thờ', `Sơn Tinh [${a.son}]`)).join('')}
+        </div>
+      </div>
+
+      <!-- Tab 10: Tổng Hợp 8 Cung -->
       <div class="interp-tab-panel" id="tab-all">
         <div class="interp-all-grid">
           ${[1, 2, 3, 4, 6, 7, 8, 9].map(p => renderPalaceOverview(analysis.palaceSummaries[p])).join('')}

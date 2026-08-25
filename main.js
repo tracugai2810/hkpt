@@ -304,6 +304,17 @@
     const hourmap = {1:'Tý', 2:'Sửu', 3:'Dần', 4:'Mão', 5:'Thìn', 6:'Tỵ', 7:'Ngọ', 8:'Mùi', 9:'Thân', 10:'Dậu', 11:'Tuất', 12:'Hợi'};
     document.getElementById('infoHour').textContent = hourmap[currentHour] || '-';
 
+    // Render Loan Dau (Exterior landscape) recommendation
+    const loanDauSection = document.getElementById('loanDauSection');
+    if (loanDauSection && window.LoanDauRules) {
+      const loanDauAnalysis = window.LoanDauRules.analyze(result);
+      if (loanDauAnalysis) {
+        loanDauSection.innerHTML = window.LoanDauRules.renderHTML(loanDauAnalysis);
+        loanDauSection.classList.remove('hidden');
+        window.LoanDauRules.initTabs();
+      }
+    }
+
     // Render Feng Shui interpretation if module available
     const interpretationSection = document.getElementById('interpretationSection');
     if (interpretationSection && window.FengShuiRules) {
