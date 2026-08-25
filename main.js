@@ -303,6 +303,18 @@
     document.getElementById('infoDay').textContent = currentDay || '-';
     const hourmap = {1:'Tý', 2:'Sửu', 3:'Dần', 4:'Mão', 5:'Thìn', 6:'Tỵ', 7:'Ngọ', 8:'Mùi', 9:'Thân', 10:'Dậu', 11:'Tuất', 12:'Hợi'};
     document.getElementById('infoHour').textContent = hourmap[currentHour] || '-';
+
+    // Render Feng Shui interpretation if module available
+    const interpretationSection = document.getElementById('interpretationSection');
+    if (interpretationSection && window.FengShuiRules) {
+      const analysis = window.FengShuiRules.analyze(result);
+      if (analysis) {
+        interpretationSection.innerHTML = window.FengShuiRules.renderHTML(analysis);
+        interpretationSection.classList.remove('hidden');
+        window.FengShuiRules.initTabs();
+      }
+    }
+
     // Auto capture image
     autoCaptureImage();
   }
