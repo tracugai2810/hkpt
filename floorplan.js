@@ -931,12 +931,11 @@
   }
 
   function exportFloorplan() {
-    if (!floorplanContainer || typeof html2canvas === 'undefined') {
-      console.error('FloorPlan: html2canvas not found or container missing');
+    if (!floorplanImage || !floorplanImage.src) {
+      console.warn('FloorPlan: No image loaded to export');
       return;
     }
 
-    const wasAdjusting = isAdjustingCenter;
     if (isAdjustingCenter) {
       toggleAdjustCenter();
     }
@@ -946,42 +945,77 @@
       btnExportFloorplan.disabled = true;
     }
 
-    // Hide helper canvas during export for a clean picture
-    if (floorplanHelperCanvas) floorplanHelperCanvas.style.display = 'none';
+    try {
+      const naturalW = floorplanImage.naturalWidth || floorplanImage.width || 800;
+      const naturalH = floorplanImage.naturalHeight || floorplanImage.height || 600;
 
-    html2canvas(floorplanContainer, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      scrollX: 0,
-      scrollY: 0
-    }).then(async canvas => {
-      if (floorplanHelperCanvas) floorplanHelperCanvas.style.display = 'block';
+      // 1. Create full-resolution offscreen canvas matching original drawing
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = naturalW;
+      exportCanvas.height = naturalH;
+      const ctx = exportCanvas.getContext('2d');
 
+      // 2. Draw full original floor plan image at 100% resolution
+      ctx.drawImage(floorplanImage, 0, 0, naturalW, naturalH);
+
+      // 3. Calculate exact export center & compass size on full image resolution
+      const exportCenterX = normalizedCenterX * naturalW;
+      const exportCenterY = normalizedCenterY * naturalH;
+
+      const screenImgW = floorplanImage.offsetWidth || 1;
+      const scaleFactor = naturalW / screenImgW;
+      const exportCompassSize = Math.max(60, Math.round(overlaySize * scaleFactor));
+
+      // 4. Render Compass on high-resolution temporary canvas
+      const compCanvas = document.createElement('canvas');
+      compCanvas.width = exportCompassSize;
+      compCanvas.height = exportCompassSize;
+
+      const result = window._currentChartResult;
+      let facingDegree = 0;
+      let facingPalace = 180;
+      let palaces = null;
+      if (result) {
+        facingDegree = result.facingDegree || 0;
+        if (result.facingMountain && result.facingMountain.palace) {
+          facingPalace = result.facingMountain.palace;
+        }
+        palaces = result.palaces || null;
+      }
+
+      if (window.Compass && window.Compass.render) {
+        window.Compass.render(compCanvas, facingDegree, facingPalace, {
+          showGuideLines: showGuideLines,
+          showSectorStars: true,
+          palaces: palaces
+        });
+      }
+
+      // 5. Composite compass with exact position, rotation, and opacity
+      ctx.save();
+      ctx.globalAlpha = overlayOpacity;
+      ctx.translate(exportCenterX, exportCenterY);
+      ctx.rotate(currentRotation * Math.PI / 180);
+      ctx.drawImage(compCanvas, -exportCompassSize / 2, -exportCompassSize / 2, exportCompassSize, exportCompassSize);
+      ctx.restore();
+
+      // 6. Save or Share Image immediately (instant synchronous canvas export)
       if (window.saveOrShareImage) {
-        await window.saveOrShareImage(canvas, 'tinhban_banve.png', 'Bản Vẽ Tinh Bàn Phong Thủy');
+        window.saveOrShareImage(exportCanvas, 'tinhban_banve.png', 'Bản Vẽ Tinh Bàn Phong Thủy');
       } else {
         const link = document.createElement('a');
         link.download = 'tinhban_banve.png';
-        link.href = canvas.toDataURL('image/png', 1.0);
+        link.href = exportCanvas.toDataURL('image/png', 1.0);
         link.click();
       }
-      
-      if (wasAdjusting) {
-        toggleAdjustCenter();
-      }
-      if (btnExportFloorplan) {
-        btnExportFloorplan.innerText = '💾 Tải Ảnh';
-        btnExportFloorplan.disabled = false;
-      }
-    }).catch(err => {
+    } catch (err) {
       console.error('FloorPlan: Error exporting floorplan:', err);
-      if (floorplanHelperCanvas) floorplanHelperCanvas.style.display = 'block';
+    } finally {
       if (btnExportFloorplan) {
         btnExportFloorplan.innerText = '💾 Tải Ảnh';
         btnExportFloorplan.disabled = false;
       }
-    });
+    }
   }
 
   // Export module

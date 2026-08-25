@@ -350,6 +350,23 @@
     }, 150);
   }
 
+  function dataURItoBlob(dataURI) {
+    try {
+      const parts = dataURI.split(',');
+      const byteString = atob(parts[1]);
+      const mimeString = parts[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], { type: mimeString });
+    } catch (e) {
+      console.warn('dataURItoBlob error:', e);
+      return null;
+    }
+  }
+
   /**
    * Universal Image Save / Share:
    * - On iOS (iPhone / iPad): Uses native Web Share Sheet (to choose "Save Image" / "Lưu hình ảnh" into Photos).
@@ -362,11 +379,10 @@
     try {
       if (typeof canvasOrDataUrl === 'string') {
         dataUrl = canvasOrDataUrl;
-        const res = await fetch(dataUrl);
-        blob = await res.blob();
-      } else if (canvasOrDataUrl && canvasOrDataUrl.toBlob) {
-        blob = await new Promise(resolve => canvasOrDataUrl.toBlob(resolve, 'image/png', 1.0));
+        blob = dataURItoBlob(dataUrl);
+      } else if (canvasOrDataUrl && canvasOrDataUrl.toDataURL) {
         dataUrl = canvasOrDataUrl.toDataURL('image/png', 1.0);
+        blob = dataURItoBlob(dataUrl);
       }
     } catch (e) {
       console.warn('Blob conversion error:', e);
@@ -378,7 +394,7 @@
 
     // 1. FOR iOS (iPhone / iPad): Use native Share Sheet to save to Photos / Thư viện ảnh
     if (isIOS) {
-      if (blob && navigator.canShare) {
+      if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
         try {
           const file = new File([blob], filename, { type: 'image/png' });
           if (navigator.canShare({ files: [file] })) {
@@ -389,11 +405,11 @@
             return;
           }
         } catch (err) {
-          if (err.name === 'AbortError') return; // User closed share sheet
+          if (err.name === 'AbortError') return; // User cancelled share sheet
           console.warn('iOS Share failed, showing modal preview fallback...', err);
         }
       }
-      // Fallback for iOS if share sheet fails
+      // Fallback for iOS if share sheet fails or unsupported
       showIOSImageModal(dataUrl, title);
       return;
     }
