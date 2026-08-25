@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================
  * Huyền Không Phi Tinh - Phong Thủy Rules Engine & Luận Giải
  * ============================================================
@@ -19,9 +19,10 @@
     const isKiem = chartResult.chartType === 'kiem';
     const facingDegree = chartResult.facingDegree || 0;
 
-    // 1. Phân loại Cát - Hung của các Sao theo Vận Trạch
+    // 1. Phân loại Cát - Hung của các Sao theo Vận Trạch hiện tại
     const saoVuongKhi = vanTrach;
     const saoSinhKhi_1 = (vanTrach % 9) + 1;
+    const saoSinhKhi_2 = (saoSinhKhi_1 % 9) + 1;
     const saoCatTinh = [1, 6, 8, 9];
     const saoBaoSat = [2, 5]; // Nhị Hắc & Ngũ Hoàng luôn là hung sát
 
@@ -40,19 +41,24 @@
         vanTrach,
         saoVuongKhi,
         saoSinhKhi_1,
+        saoSinhKhi_2,
         saoBaoSat,
+        saoCatTinh,
+        saoSuyTu,
         isKiem,
         facingDegree,
         isHuongTinhNhapTu,
         isSonTinhNhapTu
       },
-      doors: [],      // Cửa chính
-      bedrooms: [],   // Phòng ngủ
-      kitchens: [],   // Nhà bếp
-      stairs: [],     // Cầu thang
-      toilets: [],    // Nhà vệ sinh & Bể phốt
-      studies: [],    // Phòng học & Bàn làm việc
-      altars: [],     // Phòng thờ
+      doors: [],       // 1. Cửa chính (Đại Môn)
+      livingRooms: [], // 2. Phòng khách
+      balconies: [],   // 3. Ban công / Cửa sổ lớn
+      bedrooms: [],    // 4. Phòng ngủ & Giường
+      kitchens: [],    // 5. Nhà bếp
+      stairs: [],      // 6. Cầu thang & Giếng trời
+      toilets: [],     // 7. Nhà vệ sinh & Bể phốt
+      studies: [],     // 8. Bàn học (Văn Xương)
+      altars: [],      // 8. Bàn thờ (Thần Vị)
       palaceSummaries: {} // Tóm tắt 9 cung
     };
 
@@ -68,7 +74,7 @@
       const dir = pal.palaceDirection;
       const isCenter = (p === 5);
 
-      // --- 1. CỬA CHÍNH (ĐẠI MÔN / KHÍ KHẨU) ---
+      // --- 1. CỬA CHÍNH (ĐẠI MÔN / KHÍ KHẨU CHÍNH) ---
       if (!isCenter) {
         let doorRating = 'Bình';
         let doorScore = 50;
@@ -102,7 +108,7 @@
         }
 
         if (isKiem) {
-          doorDesc += ` <span class="rule-warn-inline">⚠️ Nhà kiêm hướng: Cửa chính dễ bị tạp khí, cần an vị cửa chuẩn độ số.</span>`;
+          doorDesc += ` <span class="rule-warn-inline">⚠️ Nhà kiêm hướng: Cửa chính dễ bị tạp khí, cần an vị cửa chuẩn độ số chính hướng.</span>`;
           doorScore -= 20;
         }
 
@@ -112,7 +118,92 @@
         });
       }
 
-      // --- 2. PHÒNG NGỦ & ĐẦU GIƯỜNG (SÀNG VỊ) ---
+      // --- 2. PHÒNG KHÁCH (KHÔNG GIAN ĐỘNG / SINH HOẠT CHUNG) ---
+      if (!isCenter) {
+        let lrRating = 'Bình';
+        let lrScore = 50;
+        let lrDesc = '';
+        let lrBadges = [];
+
+        const has25Combination = (son === 2 && huong === 5) || (son === 5 && huong === 2);
+
+        if (has25Combination) {
+          lrRating = 'Đại Kỵ';
+          lrScore = 10;
+          lrDesc = `Cung vị phạm tổ hợp <strong>Nhị Hắc - Ngũ Hoàng [2-5]</strong> cực độc. Bố trí phòng khách tại đây sẽ kích hoạt sát khí khi cả nhà tụ họp, gây tranh chấp, bất hòa, đau ốm triền miên.`;
+          lrBadges.push({ text: 'Tránh đặt', type: 'danger' });
+        } else if (huong === saoVuongKhi) {
+          lrRating = 'Xuất Sắc';
+          lrScore = 100;
+          lrDesc = `Hướng tinh nạp <strong>Vượng Khí (${huong})</strong> của Vận ${vanTrach}. Không gian phòng khách động khí sẽ kích hoạt tài lộc tối đa, thu hút quý nhân và khách quý.`;
+          lrBadges.push({ text: 'Đắc tài lộc', type: 'success' });
+        } else if (huong === saoSinhKhi_1) {
+          lrRating = 'Tốt';
+          lrScore = 85;
+          lrDesc = `Hướng tinh nạp <strong>Sinh Khí (${huong})</strong>. Phòng khách sinh khí dồi dào, gia đình vui vẻ, sự nghiệp phát triển.`;
+          lrBadges.push({ text: 'Nên đặt', type: 'primary' });
+        } else if (saoBaoSat.includes(huong)) {
+          lrRating = 'Xấu (Phạm Sát Tinh)';
+          lrScore = 25;
+          lrDesc = `Hướng tinh phạm ${huong === 2 ? 'Nhị Hắc (2)' : 'Ngũ Hoàng (5)'}. Cần đặt vật phẩm hành Kim (hồ lô đồng, đèn đồng) để hóa giải sát khí.`;
+          lrBadges.push({ text: 'Cần hóa giải', type: 'danger' });
+        } else if (saoCatTinh.includes(huong)) {
+          lrRating = 'Cát';
+          lrScore = 75;
+          lrDesc = `Hướng tinh cát lành (${huong}). Phù hợp bố trí phòng khách sáng sủa, ấm cúng.`;
+          lrBadges.push({ text: 'Tốt', type: 'success' });
+        } else {
+          lrRating = 'Bình';
+          lrScore = 50;
+          lrDesc = `Hướng tinh (${huong}) thoái khí. Bố trí phòng khách cần tăng cường ánh sáng tự nhiên và cây xanh hợp mệnh.`;
+        }
+
+        analysis.livingRooms.push({
+          palace: p, name, dir, son, huong, van,
+          rating: lrRating, score: lrScore, desc: lrDesc, badges: lrBadges
+        });
+      }
+
+      // --- 3. BAN CÔNG / CỬA SỔ LỚN (KHÍ KHẨU PHỤ / VIEW CHÍNH) ---
+      if (!isCenter) {
+        let balRating = 'Bình';
+        let balScore = 50;
+        let balDesc = '';
+        let balBadges = [];
+
+        if (huong === saoVuongKhi) {
+          balRating = 'Xuất Sắc';
+          balScore = 100;
+          balDesc = `Đón trọn <strong>Vượng Khí (${huong})</strong> của Vận ${vanTrach}. Ban công/cửa sổ lớn mở tại đây sẽ đón nắng, gió và tài lộc cực vượng vào nhà (đặc biệt quan trọng với chung cư, nhà phố).`;
+          balBadges.push({ text: 'Đón đại tài', type: 'success' });
+        } else if (huong === saoSinhKhi_1) {
+          balRating = 'Tốt';
+          balScore = 85;
+          balDesc = `Đón <strong>Sinh Khí (${huong})</strong> cát lành. Không gian thoáng đãng, mang lại sinh khí tươi mới và sức sống bền vững.`;
+          balBadges.push({ text: 'Rất tốt', type: 'primary' });
+        } else if (saoBaoSat.includes(huong)) {
+          balRating = 'Đại Kỵ';
+          balScore = 15;
+          balDesc = `Phương vị có sát tinh <strong>${huong === 2 ? 'Nhị Hắc (2)' : 'Ngũ Hoàng (5)'}</strong>. Mở ban công lớn/cửa sổ tại đây dễ hút uế khí, sát khí vào nhà. Nên buông rèm hoặc treo chuông gió đồng 6 ống để hóa giải.`;
+          balBadges.push({ text: 'Hút sát khí', type: 'danger' });
+        } else if (saoCatTinh.includes(huong)) {
+          balRating = 'Cát';
+          balScore = 75;
+          balDesc = `Đón cát tinh (${huong}). Ban công đón gió mát, vượng khí cho phòng sinh hoạt.`;
+          balBadges.push({ text: 'Khá tốt', type: 'success' });
+        } else {
+          balRating = 'Bình';
+          balScore = 50;
+          balDesc = `Hướng tinh (${huong}) thoái khí. Mở cửa sổ đón sáng bình thường, nên trồng cây cảnh lọc khí.`;
+        }
+
+        analysis.balconies.push({
+          palace: p, name, dir, son, huong, van,
+          rating: balRating, score: balScore, desc: balDesc, badges: balBadges
+        });
+      }
+
+      // --- 4. PHÒNG NGỦ & ĐẦU GIƯỜNG (CHỦ VỊ / SÀNG VỊ - TĨNH KHÍ) ---
       if (!isCenter) {
         let bedRating = 'Bình';
         let bedScore = 50;
@@ -146,7 +237,7 @@
         });
       }
 
-      // --- 3. NHÀ BẾP (TÁO VỊ - THUỘC HỎA) ---
+      // --- 5. NHÀ BẾP (TÁO VỊ - THUỘC HỎA) ---
       if (!isCenter) {
         let kitchenRating = 'Bình';
         let kitchenScore = 50;
@@ -192,7 +283,7 @@
         });
       }
 
-      // --- 4. CẦU THANG (ĐỘNG KHÍ LIÊN TẦNG) ---
+      // --- 6. CẦU THANG & GIẾNG TRỜI (ĐỘNG KHÍ LIÊN TẦNG & TRỤC DẪN KHÍ) ---
       let stairRating = 'Bình';
       let stairScore = 50;
       let stairDesc = '';
@@ -202,17 +293,18 @@
         // Trung Cung
         const hasDauNguuSat = (son === 3 && huong === 2) || (son === 2 && huong === 3);
         const hasXuyenTamSat = (son === 3 && huong === 7) || (son === 7 && huong === 3);
+        const has25Sat = (son === 2 && huong === 5) || (son === 5 && huong === 2);
 
-        if (hasDauNguuSat || hasXuyenTamSat) {
+        if (has25Sat || hasDauNguuSat || hasXuyenTamSat) {
           stairRating = 'Đại Kỵ';
           stairScore = 10;
-          stairDesc = `Trung Cung phạm <strong>${hasDauNguuSat ? 'Đấu Ngưu Sát [3-2]' : 'Xuyên Tâm Sát [3-7]'}</strong>. Đặt cầu thang ở giữa nhà sẽ kích hoạt cãi cọ, kiện tụng, tranh chấp và trộm cắp.`;
+          stairDesc = `Trung Cung phạm <strong>${has25Sat ? 'Nhị Hắc - Ngũ Hoàng [2-5]' : hasDauNguuSat ? 'Đấu Ngưu Sát [3-2]' : 'Xuyên Tâm Sát [3-7]'}</strong>. Đặt cầu thang/giếng trời ở giữa nhà sẽ tán phát sát khí, tranh chấp, bệnh tật lan tỏa đi khắp các tầng.`;
           stairBadges.push({ text: 'Đại kỵ', type: 'danger' });
-        } else if (isHuongTinhNhapTu) {
-          stairRating = 'Rất Tốt (Giải Nhập Tù)';
-          stairScore = 90;
-          stairDesc = `Trạch bàn bị thế <strong>"Lệnh tinh nhập tù"</strong> tại Trung Cung. Đặt cầu thang / giếng trời tại giữa nhà sẽ giúp động khí giải thoát vượng tinh, cứu vãn tài lộc cho ngôi nhà.`;
-          stairBadges.push({ text: 'Nên đặt', type: 'success' });
+        } else if (isHuongTinhNhapTu || isSonTinhNhapTu) {
+          stairRating = 'Rất Tốt (Giải Lệnh Tinh Nhập Tù)';
+          stairScore = 95;
+          stairDesc = `Trạch bàn bị thế <strong>"Lệnh tinh nhập tù"</strong> tại Trung Cung. Đặt giếng trời, khoảng thông tầng hoặc cầu thang tại giữa nhà sẽ giúp động khí giải thoát vượng tinh (${vanTrach}), cứu vãn tài lộc cho ngôi nhà.`;
+          stairBadges.push({ text: 'Giải cứu tài vận', type: 'success' });
         } else {
           stairRating = 'Lưu Ý';
           stairScore = 50;
@@ -222,8 +314,8 @@
         if (huong === saoVuongKhi || huong === saoSinhKhi_1) {
           stairRating = 'Rất Tốt';
           stairScore = 95;
-          stairDesc = `Cầu thang động khí tại cung Hướng tinh sinh vượng <strong>(${huong})</strong> sẽ khuếch tán vượng khí tài lộc đi khắp các tầng trong nhà.`;
-          stairBadges.push({ text: 'Đắc tài', type: 'success' });
+          stairDesc = `Cầu thang/thông tầng động khí tại cung Hướng tinh sinh vượng <strong>(${huong})</strong> sẽ khuếch tán vượng khí tài lộc đi khắp các tầng trong nhà.`;
+          stairBadges.push({ text: 'Đắc tài khí', type: 'success' });
         } else if (saoBaoSat.includes(huong)) {
           stairRating = 'Cực Hung';
           stairScore = 15;
@@ -241,7 +333,7 @@
         rating: stairRating, score: stairScore, desc: stairDesc, badges: stairBadges
       });
 
-      // --- 5. NHÀ VỆ SINH & BỂ PHỐT (UẾ KHÍ) ---
+      // --- 7. NHÀ VỆ SINH & BỂ PHỐT (UẾ KHÍ) ---
       let wcRating = 'Bình';
       let wcScore = 50;
       let wcDesc = '';
@@ -290,7 +382,7 @@
         rating: wcRating, score: wcScore, desc: wcDesc, badges: wcBadges
       });
 
-      // --- 6. PHÒNG HỌC, LÀM VIỆC & PHÒNG THỜ ---
+      // --- 8. PHÒNG HỌC, LÀM VIỆC & PHÒNG THỜ ---
       if (!isCenter) {
         // Phòng học / Bàn làm việc (Văn Xương)
         if (isVanXuong) {
@@ -323,10 +415,12 @@
         }
       }
 
-      // --- 7. TỔNG HỢP CUNG VỊ ---
+      // --- TỔNG HỢP CUNG VỊ ---
       analysis.palaceSummaries[p] = {
         palace: p, name, dir, son, huong, van, isCenter,
         door: analysis.doors.find(d => d.palace === p),
+        livingRoom: analysis.livingRooms.find(lr => lr.palace === p),
+        balcony: analysis.balconies.find(b => b.palace === p),
         bedroom: analysis.bedrooms.find(b => b.palace === p),
         kitchen: analysis.kitchens.find(k => k.palace === p),
         stair: analysis.stairs.find(s => s.palace === p),
@@ -339,6 +433,8 @@
     // Sắp xếp các danh sách theo điểm số giảm dần để người dùng dễ nhìn vị trí tốt nhất
     const sortByScore = (a, b) => b.score - a.score;
     analysis.doors.sort(sortByScore);
+    analysis.livingRooms.sort(sortByScore);
+    analysis.balconies.sort(sortByScore);
     analysis.bedrooms.sort(sortByScore);
     analysis.kitchens.sort(sortByScore);
     analysis.stairs.sort(sortByScore);
@@ -358,39 +454,44 @@
     if (!analysis) return '';
 
     const meta = analysis.meta;
+    const v = meta.vanTrach;
+    const sVuong = meta.saoVuongKhi;
+    const sSinh = meta.saoSinhKhi_1;
+    const sSat = meta.saoBaoSat.join(' & ');
+    const sSuy = meta.saoSuyTu.join(', ');
 
     return `
       <div class="interp-header">
         <div class="interp-title-group">
           <span class="interp-badge-tag">Huyền Không Phi Tinh</span>
-          <h3 class="interp-main-title">🏛️ Luận Giải & Gợi Ý Bố Cục Phong Thủy Nhà Ở</h3>
-          <p class="interp-subtitle">Đánh giá cát hung 8 phương hướng cho các phòng ốc theo Tinh Bàn Vận ${meta.vanTrach}</p>
+          <h3 class="interp-main-title">🏛️ Luận Giải & Bố Cục Phong Thủy Nhà Ở</h3>
+          <p class="interp-subtitle">Hệ thống đánh giá cát hung 8 phương hướng theo Tinh Bàn Vận ${v}</p>
         </div>
       </div>
 
-      <!-- Tóm tắt Khí Vận của Trạch Nhà -->
+      <!-- Tóm tắt Khí Vận của Trạch Nhà (Tự động tính theo Vận) -->
       <div class="interp-overview-bar">
         <div class="interp-stat-card stat-vuong">
           <span class="stat-icon">🌟</span>
           <div class="stat-info">
-            <span class="stat-label">Vượng Khí (Tài lộc đỉnh cao)</span>
-            <strong class="stat-val">Sao ${meta.saoVuongKhi}</strong>
+            <span class="stat-label">Vượng Khí (Tài Lộc Đỉnh Cao)</span>
+            <strong class="stat-val">Sao ${sVuong} (Vận ${v})</strong>
           </div>
         </div>
         <div class="stat-divider"></div>
         <div class="interp-stat-card stat-sinh">
           <span class="stat-icon">🌿</span>
           <div class="stat-info">
-            <span class="stat-label">Sinh Khí (Phát triển bền vững)</span>
-            <strong class="stat-val">Sao ${meta.saoSinhKhi_1}</strong>
+            <span class="stat-label">Sinh Khí (Phát Triển Bền Vững)</span>
+            <strong class="stat-val">Sao ${sSinh}</strong>
           </div>
         </div>
         <div class="stat-divider"></div>
         <div class="interp-stat-card stat-sat">
           <span class="stat-icon">⚠️</span>
           <div class="stat-info">
-            <span class="stat-label">Đại Hung Sát (Bệnh tật, tai họa)</span>
-            <strong class="stat-val">Sao 2 & 5</strong>
+            <span class="stat-label">Đại Hung Sát (Bệnh Tật, Tai Họa)</span>
+            <strong class="stat-val">Sao ${sSat}</strong>
           </div>
         </div>
       </div>
@@ -408,78 +509,104 @@
         <div class="interp-alert-box alert-info">
           <span class="alert-icon">💡</span>
           <div class="alert-content">
-            <strong>Trạch bàn bị "Lệnh Tinh Nhập Tù":</strong> Sao Vượng Hướng (${meta.vanTrach}) rơi vào Trung Cung. Nên bố trí giếng trời, cầu thang hoặc mở khoảng thông tầng ở giữa nhà để giải thoát vượng khí tài lộc.
+            <strong>Trạch bàn bị "Lệnh Tinh Nhập Tù":</strong> Sao Vượng Hướng (${sVuong}) rơi vào Trung Cung. Nên bố trí giếng trời, cầu thang hoặc mở khoảng thông tầng ở giữa nhà để giải thoát vượng khí tài lộc.
           </div>
         </div>
       ` : ''}
 
-      <!-- Bộ lọc Tabs chuyển đổi giữa các phòng ốc -->
+      <!-- Bộ lọc Tabs chuyển đổi 8 khu vực phong thủy -->
       <div class="interp-tabs-container">
         <div class="interp-tabs-scroll">
           <button type="button" class="interp-tab active" data-tab="doors">🚪 Cửa Chính</button>
+          <button type="button" class="interp-tab" data-tab="living">🛋️ Phòng Khách</button>
+          <button type="button" class="interp-tab" data-tab="balcony">🌅 Ban Công / Cửa Sổ</button>
           <button type="button" class="interp-tab" data-tab="bedrooms">🛏️ Phòng Ngủ</button>
           <button type="button" class="interp-tab" data-tab="kitchens">🍳 Nhà Bếp</button>
-          <button type="button" class="interp-tab" data-tab="stairs">🪜 Cầu Thang</button>
+          <button type="button" class="interp-tab" data-tab="stairs">🪜 Cầu Thang / Giếng Trời</button>
           <button type="button" class="interp-tab" data-tab="toilets">🚿 Nhà Vệ Sinh</button>
           <button type="button" class="interp-tab" data-tab="studies">📚 Học & Thờ Cúng</button>
-          <button type="button" class="interp-tab" data-tab="all">🧭 Tổng Hợp 8 Hướng</button>
+          <button type="button" class="interp-tab" data-tab="all">🧭 Tổng Hợp 8 Cung</button>
         </div>
       </div>
 
-      <!-- Tab Content 1: Cửa Chính -->
+      <!-- Tab 1: Cửa Chính -->
       <div class="interp-tab-panel active" id="tab-doors">
         <div class="interp-guide-tip">
-          🎯 <strong>Nguyên lý:</strong> Cửa chính (Đại Môn) là miệng nạp khí (Khí Khẩu) của toàn gia, quyết định 70% tài vận. Cần đặt tại cung có <strong>Hướng Tinh Vượng Khí (${meta.saoVuongKhi})</strong> hoặc <strong>Sinh Khí (${meta.saoSinhKhi_1})</strong>; tối kỵ Hướng Tinh 2, 5.
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Cửa chính (Đại Môn) là Khí Khẩu chính nạp 70% tài vận. Cần đặt tại cung có <strong>Hướng Tinh Vượng Khí (Sao ${sVuong})</strong> hoặc <strong>Sinh Khí (Sao ${sSinh})</strong>. Đại kỵ mở cửa tại cung có Hướng Tinh là <strong>Sao ${sSat}</strong> (Sát khí) hoặc cung phạm Không Vong.
         </div>
         <div class="interp-cards-grid">
           ${analysis.doors.map(d => renderCardItem(d, 'Cửa Chính', `Hướng Tinh [${d.huong}]`)).join('')}
         </div>
       </div>
 
-      <!-- Tab Content 2: Phòng Ngủ -->
+      <!-- Tab 2: Phòng Khách -->
+      <div class="interp-tab-panel" id="tab-living">
+        <div class="interp-guide-tip">
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Phòng khách là không gian sinh hoạt chung, người đi lại nhiều $\rightarrow$ thuộc trạng thái <strong>Động</strong>. Ưu tiên đặt tại cung có <strong>Hướng Tinh Vượng Khí (Sao ${sVuong})</strong> hoặc <strong>Sinh Khí (Sao ${sSinh})</strong> để kích hoạt tài lộc. Đại kỵ đặt tại cung có cặp sát tinh <strong>[2-5] hoặc [5-2]</strong> (gây bất hòa, đau ốm cho cả nhà).
+        </div>
+        <div class="interp-cards-grid">
+          ${analysis.livingRooms.map(lr => renderCardItem(lr, 'Phòng Khách', `Hướng Tinh [${lr.huong}]`)).join('')}
+        </div>
+      </div>
+
+      <!-- Tab 3: Ban Công / Cửa Sổ Lớn -->
+      <div class="interp-tab-panel" id="tab-balcony">
+        <div class="interp-guide-tip">
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Ban công và cửa sổ lớn là <strong>Khí Khẩu Phụ</strong> (nơi nạp sáng, đón gió và view chính, đặc biệt quan trọng với chung cư & nhà phố). Nên mở ở cung có <strong>Hướng Tinh Vượng Khí (Sao ${sVuong})</strong> hoặc <strong>Sinh Khí (Sao ${sSinh})</strong> để đón cát khí; tránh mở lớn tại cung có <strong>Sao ${sSat}</strong> để không hút sát khí.
+        </div>
+        <div class="interp-cards-grid">
+          ${analysis.balconies.map(b => renderCardItem(b, 'Ban Công', `Hướng Tinh [${b.huong}]`)).join('')}
+        </div>
+      </div>
+
+      <!-- Tab 4: Phòng Ngủ -->
       <div class="interp-tab-panel" id="tab-bedrooms">
         <div class="interp-guide-tip">
-          🎯 <strong>Nguyên lý:</strong> <em>"Sơn quản nhân đinh, Thủy quản tài lộc"</em>. Phòng ngủ cần không gian tĩnh, ưu tiên cung có <strong>Sơn Tinh Vượng (${meta.saoVuongKhi}, ${meta.saoSinhKhi_1}, Cát tinh 1, 6, 8, 9)</strong> để bồi dưỡng sức khỏe, hòa khí vợ chồng và sinh con hiếu thuận.
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> <em>"Sơn quản nhân đinh, Thủy quản tài lộc"</em>. Phòng ngủ và vị trí đầu giường thuộc <strong>Tĩnh Khí</strong>, ưu tiên đặt tại cung có <strong>Sơn Tinh Vượng (Sao ${sVuong})</strong> hoặc <strong>Sinh Khí (Sao ${sSinh})</strong> để bồi bổ sức khỏe, gia đạo êm ấm. Đại kỵ đặt giường tại cung có Sơn Tinh là <strong>Sao ${sSat}</strong>.
         </div>
         <div class="interp-cards-grid">
           ${analysis.bedrooms.map(b => renderCardItem(b, 'Phòng Ngủ', `Sơn Tinh [${b.son}]`)).join('')}
         </div>
       </div>
 
-      <!-- Tab Content 3: Nhà Bếp -->
+      <!-- Tab 5: Nhà Bếp -->
       <div class="interp-tab-panel" id="tab-kitchens">
         <div class="interp-guide-tip">
-          🎯 <strong>Nguyên lý:</strong> Bếp mang Hỏa khí nung nấu. Tọa độ đặt bếp (Tọa bếp) cần nằm ở cung Sơn tinh cát lành (1, 3, 4, 8, 9); đại kỵ cung Càn (Hỏa thiêu thiên môn) và cung có sao 2, 5. Hướng lưng người nấu quay về Hướng tinh 1 (Thủy Hỏa ký tế) hoặc 3, 4 (Mộc sinh Hỏa) là đại cát.
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Bếp mang Hỏa khí nung nấu. Tọa độ đặt bếp (Tọa bếp) cần nằm ở cung Sơn Tinh cát lành (1, 3, 4, 8, 9); đại kỵ cung Càn (Hỏa thiêu thiên môn) và cung có Sơn Tinh <strong>Sao ${sSat}</strong>. Hướng bếp quay về Hướng Tinh <strong>Sao 1 (Thủy Hỏa Ký Tế)</strong> hoặc <strong>Sao 3, 4 (Mộc Sinh Hỏa)</strong> là đại cát.
         </div>
         <div class="interp-cards-grid">
           ${analysis.kitchens.map(k => renderCardItem(k, 'Nhà Bếp', `Tọa Sơn [${k.son}]`, k.huongAdvice)).join('')}
         </div>
       </div>
 
-      <!-- Tab Content 4: Cầu Thang -->
+      <!-- Tab 6: Cầu Thang & Giếng Trời -->
       <div class="interp-tab-panel" id="tab-stairs">
         <div class="interp-guide-tip">
-          🎯 <strong>Nguyên lý:</strong> Cầu thang dẫn khí liên tầng (Động khí liên tục). Cần bố trí tại cung có <strong>Hướng Tinh Vượng Khí</strong> để khuếch tán tài lộc lên các tầng; tránh tuyệt đối Hướng tinh 2, 5 để không phát tán sát khí bệnh tật.
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Cầu thang & giếng trời là trục dẫn khí theo chiều thẳng đứng (Động khí liên tầng). Bố trí tại cung có <strong>Hướng Tinh Vượng Khí (Sao ${sVuong}, ${sSinh})</strong> để khuếch tán tài lộc; tránh Hướng Tinh <strong>Sao ${sSat}</strong>. Nếu đặt ở giữa nhà (Trung Cung), rất tốt khi cần giải thế <em>"Lệnh Tinh Nhập Tù"</em>, nhưng đại kỵ nếu Trung Cung phạm [2-5], [3-2] Đấu ngưu sát hay [3-7] Xuyên tâm sát.
         </div>
         <div class="interp-cards-grid">
-          ${analysis.stairs.map(s => renderCardItem(s, 'Cầu Thang', `Hướng Tinh [${s.huong}]`)).join('')}
+          ${analysis.stairs.map(s => renderCardItem(s, 'Cầu Thang / Giếng Trời', `Hướng Tinh [${s.huong}]`)).join('')}
         </div>
       </div>
 
-      <!-- Tab Content 5: Nhà Vệ Sinh -->
+      <!-- Tab 7: Nhà Vệ Sinh -->
       <div class="interp-tab-panel" id="tab-toilets">
         <div class="interp-guide-tip">
-          🎯 <strong>Nguyên lý:</strong> <em>"Dĩ độc trị độc"</em> – Nhà vệ sinh nên đặt tại các cung có Sơn Tinh & Hướng Tinh đều suy tử thoái khí để dòng nước cuốn trôi sát khí. Cấm tuyệt đối đặt giữa nhà (Trung Cung), cấm cung Văn Xương [1-4] và hạn chế cung Càn (Tây Bắc), Khôn (Tây Nam).
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> <em>"Dĩ độc trị độc"</em> – Nhà vệ sinh nên đặt tại các cung có cả Sơn Tinh & Hướng Tinh đều thuộc <strong>Sao Suy Tử (${sSuy})</strong> trong Vận ${v} để dòng nước cuốn trôi sát khí. Cấm tuyệt đối đặt giữa nhà (Trung Cung), cấm cung Văn Xương [1-4, 4-1] và hạn chế cung Càn (hại cha), Khôn (hại mẹ).
         </div>
         <div class="interp-cards-grid">
           ${analysis.toilets.map(t => renderCardItem(t, 'Nhà Vệ Sinh', `Sơn [${t.son}] - Hướng [${t.huong}]`)).join('')}
         </div>
       </div>
 
-      <!-- Tab Content 6: Phòng Học & Phòng Thờ -->
+      <!-- Tab 8: Học Tập & Thờ Cúng -->
       <div class="interp-tab-panel" id="tab-studies">
         <div class="interp-study-section">
-          <h4 class="interp-group-heading">📚 Vị Trí Đặt Bàn Học & Phòng Làm Việc (Văn Xương Tinh)</h4>
+          <div class="interp-guide-tip">
+            🎯 <strong>Nguyên lý:</strong> Bàn học / làm việc cần đặt tại phương vị <strong>Văn Xương Tinh [1-4] hoặc [4-1]</strong> để kích hoạt trí tuệ, đỗ đạt. Bàn thờ (Thần Vị) cần không gian tối tĩnh, đặt tại cung có <strong>Sơn Tinh cát lành</strong>, tôn nghiêm, tránh nhìn thẳng WC hoặc bếp.
+          </div>
+
+          <h4 class="interp-group-heading">📚 Vị Trí Đặt Bàn Học & Phòng Làm Việc (Văn Xương)</h4>
           <div class="interp-cards-grid">
             ${analysis.studies.length > 0 ? 
               analysis.studies.map(st => renderCardItem(st, 'Góc Học Tập', `Tổ hợp sao [${st.son}-${st.huong}]`)).join('') :
@@ -497,7 +624,7 @@
         </div>
       </div>
 
-      <!-- Tab Content 7: Tổng Hợp 8 Hướng -->
+      <!-- Tab 9: Tổng Hợp 8 Cung -->
       <div class="interp-tab-panel" id="tab-all">
         <div class="interp-all-grid">
           ${[1, 2, 3, 4, 6, 7, 8, 9].map(p => renderPalaceOverview(analysis.palaceSummaries[p])).join('')}

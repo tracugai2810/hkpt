@@ -21,6 +21,7 @@
   let overlayOpacity = 0.7;
   let imageZoom = 100; // percent (50 - 300)
   let showGuideLines = true;
+  let isMinimalMode = false;
   let isFullscreen = false;
 
   // Centering modes: 'free' | 'box' | 'polygon' | 'auto'
@@ -39,7 +40,7 @@
   let floorplanImage, floorplanHelperCanvas, floorplanOverlay, floorplanCompass;
   let centerMarker, sizeSlider, imageZoomSlider, opacitySlider, rotationDisplay;
   let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, btnToggleFullscreen;
-  let transparentBgCheckbox, guideLinesCheckbox;
+  let transparentBgCheckbox, guideLinesCheckbox, minimalModeCheckbox;
   let centerToolsPanel, centerToolDesc;
   let centerBoxActions, centerPolyActions, centerFreeActions;
   let btnModeFree, btnModeBox, btnModePolygon, btnModeAuto;
@@ -64,6 +65,7 @@
     opacitySlider = document.getElementById('opacitySlider');
     transparentBgCheckbox = document.getElementById('transparentBgCheckbox');
     guideLinesCheckbox = document.getElementById('guideLinesCheckbox');
+    minimalModeCheckbox = document.getElementById('minimalModeCheckbox');
     rotationDisplay = document.getElementById('rotationDisplay');
     btnAdjustCenter = document.getElementById('btnAdjustCenter');
     btnResetFloorplan = document.getElementById('btnResetFloorplan');
@@ -132,6 +134,14 @@
     if (transparentBgCheckbox) {
       transparentBgCheckbox.addEventListener('change', function() {
         updateTransparentState();
+      });
+    }
+
+    // 6. Minimal Mode (Tối Giản 8 Hướng) checkbox
+    if (minimalModeCheckbox) {
+      minimalModeCheckbox.addEventListener('change', function() {
+        isMinimalMode = this.checked;
+        renderCompass();
       });
     }
 
@@ -565,7 +575,8 @@
     window.Compass.render(floorplanCompass, facingDegree, facingPalace, {
       showGuideLines: showGuideLines,
       showSectorStars: true,
-      palaces: palaces
+      palaces: palaces,
+      minimalMode: isMinimalMode
     });
   }
 
@@ -987,7 +998,8 @@
         window.Compass.render(compCanvas, facingDegree, facingPalace, {
           showGuideLines: showGuideLines,
           showSectorStars: true,
-          palaces: palaces
+          palaces: palaces,
+          minimalMode: isMinimalMode
         });
       }
 

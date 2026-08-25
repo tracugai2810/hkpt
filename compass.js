@@ -108,17 +108,23 @@
   /**
    * Draws tangential text (readable from outside the circle) at the specified position.
    */
-  function drawText(ctx, cx, cy, radius, compassDeg, text, font, color) {
+  function drawText(ctx, cx, cy, radius, compassDeg, text, font, color, withHalo) {
     const pos = getXY(cx, cy, radius, compassDeg);
     const textRotation = (compassDeg + 180) * Math.PI / 180;
     
     ctx.save();
     ctx.translate(pos.x, pos.y);
     ctx.rotate(textRotation);
-    ctx.fillStyle = color;
     ctx.font = font;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    if (withHalo) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4.5;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(text, 0, 0);
+    }
+    ctx.fillStyle = color;
     ctx.fillText(text, 0, 0);
     ctx.restore();
   }
@@ -207,12 +213,14 @@
   /**
    * Renders the La Bàn (compass) to the given canvas.
    * Supports rendering sector stars directly in the 8 directions + Center.
+   * Supports minimalMode for clean, blueprint-friendly 8-palace architectural overlay.
    */
   function render(canvas, facingDegree, facingPalace, options) {
     options = options || {};
     const showGuideLines = options.showGuideLines !== false;
     const showSectorStars = !!options.showSectorStars;
     const palaces = options.palaces || null;
+    const isMinimal = !!options.minimalMode;
 
     // 1. Set canvas resolution to 1000x1000
     canvas.width = 1000;
@@ -237,6 +245,115 @@
 
     // Radii in scaled units
     const R_OUTER = 290 * s;
+
+    // ============================================================
+    // MODE 1: CHẾ ĐỘ TỐI GIẢN (MINIMALIST 8-PALACE OVERLAY)
+    // ============================================================
+    if (isMinimal) {
+      const R_DIR_TEXT = 225 * s;
+      const R_STAR_SECTOR = 120 * s;
+
+      // Outer boundary dashed circle
+      drawCircle(ctx, cx, cy, R_OUTER, 'rgba(15, 23, 42, 0.4)', 1.5 * s, [8 * s, 6 * s]);
+
+      // 8 Palaces partition rays from center (0) out to R_OUTER in clean solid dark lines
+      for (let i = 0; i < 8; i++) {
+        const boundDeg = i * 45 + 22.5;
+        drawRadialLine(ctx, cx, cy, 0, R_OUTER, boundDeg, '#0f172a', 2.0 * s);
+      }
+
+      // 8 Direction text - BOLD with white halo for maximum readability on CAD drawings
+      const DIR_NAMES_MINIMAL = [
+        { name: 'BẮC (B)', center: 0 },
+        { name: 'ĐÔNG BẮC (ĐB)', center: 45 },
+        { name: 'ĐÔNG (Đ)', center: 90 },
+        { name: 'ĐÔNG NAM (ĐN)', center: 135 },
+        { name: 'NAM (N)', center: 180 },
+        { name: 'TÂY NAM (TN)', center: 225 },
+        { name: 'TÂY (T)', center: 270 },
+        { name: 'TÂY BẮC (TB)', center: 315 },
+      ];
+
+      for (let i = 0; i < 8; i++) {
+        const dir = DIR_NAMES_MINIMAL[i];
+        const font = `900 ${Math.round(15 * s)}px "Inter", "Noto Sans", sans-serif`;
+        drawText(ctx, cx, cy, R_DIR_TEXT, dir.center, dir.name, font, '#0f172a', true);
+      }
+
+      // Distinct HƯỚNG & TỌA rays & badges
+      if (showGuideLines) {
+        const sittingDegree = (facingDegree + 180) % 360;
+
+        // HƯỚNG (Facing)
+        drawRadialLine(ctx, cx, cy, 0, R_OUTER + 14 * s, facingDegree, '#dc2626', 3.5 * s);
+        drawArrowhead(ctx, cx, cy, R_OUTER + 16 * s, facingDegree, 16 * s, '#dc2626');
+
+        const huongPos = getXY(cx, cy, R_OUTER - 26 * s, facingDegree);
+        ctx.save();
+        ctx.translate(huongPos.x, huongPos.y);
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.roundRect(-24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('HƯỚNG', 0, 0);
+        ctx.restore();
+
+        // TỌA (Sitting)
+        drawRadialLine(ctx, cx, cy, 0, R_OUTER + 14 * s, sittingDegree, '#1d4ed8', 3.5 * s);
+        drawArrowhead(ctx, cx, cy, R_OUTER + 16 * s, sittingDegree, 16 * s, '#1d4ed8');
+
+        const toaPos = getXY(cx, cy, R_OUTER - 26 * s, sittingDegree);
+        ctx.save();
+        ctx.translate(toaPos.x, toaPos.y);
+        ctx.fillStyle = '#1d4ed8';
+        ctx.beginPath();
+        ctx.roundRect(-20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('TỌA', 0, 0);
+        ctx.restore();
+      }
+
+      // Render Sector Flying Stars directly in each direction sector & center
+      if (showSectorStars && palaces) {
+        for (let p = 1; p <= 9; p++) {
+          if (p === 5) continue;
+          const dirDeg = PALACE_TO_DIR_DEG[p];
+          const pData = palaces[p];
+          if (pData && dirDeg !== null) {
+            const starPos = getXY(cx, cy, R_STAR_SECTOR, dirDeg);
+            const starRot = (dirDeg + 180) * Math.PI / 180;
+            drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false);
+          }
+        }
+
+        // Draw Center Palace (Palace 5 - Trung Cung)
+        const centerData = palaces[5];
+        if (centerData) {
+          drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true);
+        }
+      }
+
+      // Center red dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4.5 * s, 0, 2 * Math.PI);
+      ctx.fillStyle = '#dc2626';
+      ctx.fill();
+
+      ctx.restore();
+      return;
+    }
+
+    // ============================================================
+    // MODE 2: CHẾ ĐỘ LA BÀN ĐẦY ĐỦ (FULL 24-MOUNTAIN COMPASS)
+    // ============================================================
     const R_TICK_OUT = 288 * s;
     const R_TICK_IN_MINOR = 280 * s;
     const R_TICK_IN_MAJOR = 274 * s;

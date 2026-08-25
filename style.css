@@ -1159,9 +1159,17 @@ select.input-field {
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
+.fp-toggles-row {
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .fp-rotation-display {
   font-size: 0.85rem;
   color: var(--text-secondary);
+  margin-left: auto;
 }
 
 .fp-rotation-display strong {
@@ -1411,16 +1419,17 @@ select.input-field {
 /* Tabs */
 .interp-tabs-container {
   margin-bottom: 16px;
-  overflow: hidden;
+  position: relative;
 }
 
 .interp-tabs-scroll {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 4px 2px 8px 2px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 .interp-tabs-scroll::-webkit-scrollbar {
@@ -1429,28 +1438,38 @@ select.input-field {
 
 .interp-tab {
   flex-shrink: 0;
-  padding: 8px 14px;
-  font-size: 0.85rem;
+  padding: 10px 16px;
+  font-size: 0.88rem;
   font-weight: 600;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   background: #f8fafc;
-  color: #475569;
-  border-radius: 20px;
+  color: #334155;
+  border-radius: 24px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  user-select: none;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .interp-tab:hover {
   background: #e2e8f0;
-  color: #1e293b;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.interp-tab:active {
+  transform: scale(0.96);
 }
 
 .interp-tab.active {
-  background: #1e293b;
+  background: #0f172a;
   color: #ffffff;
-  border-color: #1e293b;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  border-color: #0f172a;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
 }
 
 /* Tab Panels */
@@ -1460,18 +1479,37 @@ select.input-field {
 
 .interp-tab-panel.active {
   display: block;
-  animation: fadeIn 0.25s ease;
+  animation: tabFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .interp-guide-tip {
-  background: #eff6ff;
-  border-left: 4px solid #3b82f6;
-  padding: 10px 14px;
-  border-radius: 0 8px 8px 0;
-  font-size: 0.85rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border-left: 4px solid #2563eb;
+  border-right: 1px solid #dbeafe;
+  border-top: 1px solid #dbeafe;
+  border-bottom: 1px solid #dbeafe;
+  padding: 12px 16px;
+  border-radius: 0 10px 10px 0;
+  font-size: 0.88rem;
   color: #1e3a8a;
-  line-height: 1.45;
+  line-height: 1.55;
   margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.interp-guide-tip strong {
+  color: #0f172a;
 }
 
 /* Cards Grid */
