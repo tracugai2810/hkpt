@@ -27,8 +27,6 @@
   let isFullscreen = false;
   let showCenterPalace = true; // Trung Cung 1/9 DT
   let houseBounds = { widthRatio: 0.8, heightRatio: 0.8 }; // Ratio of house max width & length relative to image
-  let isDefiningBounds = false;
-  let manualBoundsPoints = [];
 
   // Centering modes: 'free' | 'box' | 'polygon' | 'auto'
   let centerMode = 'free';
@@ -46,7 +44,7 @@
   let floorplanImage, floorplanHelperCanvas, floorplanOverlay, floorplanCompass;
   let centerMarker, sizeSlider, imageZoomSlider, opacitySlider, rotationDisplay;
   let btnAdjustCenter, btnResetFloorplan, btnExportFloorplan, btnToggleFullscreen, btnFitView;
-  let transparentBgCheckbox, guideLinesCheckbox, minimalModeCheckbox, centerPalaceCheckbox, btnDefineBounds;
+  let transparentBgCheckbox, guideLinesCheckbox, minimalModeCheckbox, centerPalaceCheckbox;
   let centerToolsPanel, centerToolDesc;
   let centerBoxActions, centerPolyActions, centerFreeActions;
   let btnModeFree, btnModeBox, btnModePolygon, btnModeAuto;
@@ -171,11 +169,6 @@
       });
     }
 
-    // 7.6. Define House Bounds button
-    if (btnDefineBounds) {
-      btnDefineBounds.addEventListener('click', toggleDefineBounds);
-    }
-
     // 8. Adjust center button toggle
     if (btnAdjustCenter) {
       btnAdjustCenter.addEventListener('click', toggleAdjustCenter);
@@ -187,9 +180,6 @@
         currentRotation = 0;
         boxPoints = [];
         polygonPoints = [];
-        manualBoundsPoints = [];
-        isDefiningBounds = false;
-        if (btnDefineBounds) btnDefineBounds.classList.remove('active');
         fitImageToContainer();
       });
     }
@@ -655,7 +645,7 @@
     });
   }
 
-  // Draw Trung Cung (1/9 Area) Centered Box
+  // Draw Trung Cung (1/9 Area) Centered Box (Thin Dashed Border Only)
   function drawCenterPalace(ctx, curW, curH, opacityFactor = 1.0) {
     if (!showCenterPalace || !houseBounds) return;
 
@@ -672,90 +662,13 @@
     const alpha = overlayOpacity * opacityFactor;
 
     ctx.save();
-    // Translucent fill
-    ctx.fillStyle = `rgba(220, 38, 38, ${0.08 * alpha})`;
-    ctx.fillRect(startX, startY, tcW, tcH);
-
-    // Dashed border
-    ctx.strokeStyle = `rgba(220, 38, 38, ${0.85 * alpha})`;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
+    // Thin dashed border only (no fill, no text label)
+    ctx.strokeStyle = `rgba(220, 38, 38, ${0.9 * alpha})`;
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([5, 4]);
     ctx.strokeRect(startX, startY, tcW, tcH);
     ctx.setLineDash([]);
-
-    // Small label
-    if (tcW > 45 && tcH > 26) {
-      ctx.fillStyle = `rgba(220, 38, 38, ${0.9 * alpha})`;
-      ctx.font = 'bold 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillText('TRUNG CUNG', centerX, startY + 4);
-
-      ctx.font = '9px sans-serif';
-      ctx.fillText('(1/9 DT)', centerX, startY + 17);
-    }
     ctx.restore();
-  }
-
-  function toggleDefineBounds() {
-    isDefiningBounds = !isDefiningBounds;
-    manualBoundsPoints = [];
-    if (btnDefineBounds) {
-      btnDefineBounds.classList.toggle('active', isDefiningBounds);
-    }
-    if (floorplanContainer) {
-      floorplanContainer.classList.toggle('adjusting-center', isDefiningBounds || isAdjustingCenter);
-    }
-    if (isDefiningBounds) {
-      if (centerToolsPanel) centerToolsPanel.classList.remove('hidden');
-      if (centerToolDesc) {
-        centerToolDesc.innerHTML = '📐 <strong>Chấm Khung Nhà:</strong> Click <strong>Góc 1</strong> và <strong>Góc đối diện (Góc 2)</strong> của viền ngoài ngôi nhà để lấy chiều dài & rộng max.';
-      }
-    } else {
-      if (!isAdjustingCenter && centerToolsPanel) centerToolsPanel.classList.add('hidden');
-    }
-    renderHelperCanvas();
-  }
-
-  function handleBoundsPointClick(e) {
-    if (!floorplanImage) return;
-    const imgRect = floorplanImage.getBoundingClientRect();
-    if (!imgRect.width || !imgRect.height) return;
-
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const clickX = clientX - imgRect.left;
-    const clickY = clientY - imgRect.top;
-
-    const ratioX = Math.max(0, Math.min(1, clickX / imgRect.width));
-    const ratioY = Math.max(0, Math.min(1, clickY / imgRect.height));
-
-    if (manualBoundsPoints.length >= 2) manualBoundsPoints = [];
-    manualBoundsPoints.push({ x: ratioX, y: ratioY });
-
-    if (manualBoundsPoints.length === 1) {
-      if (centerToolDesc) {
-        centerToolDesc.innerHTML = '📐 <strong>Đã chọn Góc 1.</strong> Hãy click tiếp <strong>Góc đối diện (Góc 2)</strong> để hoàn tất.';
-      }
-    } else if (manualBoundsPoints.length === 2) {
-      const p1 = manualBoundsPoints[0];
-      const p2 = manualBoundsPoints[1];
-      const wRatio = Math.abs(p2.x - p1.x);
-      const hRatio = Math.abs(p2.y - p1.y);
-      if (wRatio > 0.02 && hRatio > 0.02) {
-        houseBounds = { widthRatio: wRatio, heightRatio: hRatio };
-      }
-      isDefiningBounds = false;
-      if (btnDefineBounds) btnDefineBounds.classList.remove('active');
-      if (!isAdjustingCenter) {
-        if (floorplanContainer) floorplanContainer.classList.remove('adjusting-center');
-        if (centerToolsPanel) centerToolsPanel.classList.add('hidden');
-      }
-      if (centerToolDesc) {
-        centerToolDesc.innerHTML = '✓ <strong>Đã lưu kích thước nhà & vẽ Ô Trung Cung (1/9)!</strong>';
-      }
-    }
-    renderHelperCanvas();
   }
 
   // Render Visual Guide Lines (Trung Cung Box, Diagonals, Bounding Box, Polygon, Crosshairs)
@@ -775,23 +688,6 @@
     // 1. Draw Trung Cung (1/9 Area) Box
     if (showCenterPalace) {
       drawCenterPalace(ctx, curW, curH, 1.0);
-    }
-
-    // 2. Draw Manual House Bounds picking
-    if (isDefiningBounds && manualBoundsPoints.length > 0) {
-      const p1 = { x: manualBoundsPoints[0].x * curW, y: manualBoundsPoints[0].y * curH };
-      drawPin(ctx, p1.x, p1.y, '1', '#0f766e');
-      if (manualBoundsPoints.length === 2) {
-        const p2 = { x: manualBoundsPoints[1].x * curW, y: manualBoundsPoints[1].y * curH };
-        drawPin(ctx, p2.x, p2.y, '2', '#0f766e');
-        const xMin = Math.min(p1.x, p2.x), xMax = Math.max(p1.x, p2.x);
-        const yMin = Math.min(p1.y, p2.y), yMax = Math.max(p1.y, p2.y);
-        ctx.strokeStyle = '#0f766e';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 4]);
-        ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
-        ctx.setLineDash([]);
-      }
     }
 
     if (!isAdjustingCenter) return;
@@ -1063,12 +959,6 @@
       }
 
       // 1-pointer interaction:
-      if (isDefiningBounds) {
-        e.preventDefault();
-        handleBoundsPointClick(e);
-        return;
-      }
-
       if (isAdjustingCenter) {
         // Mode 1: Moving center / picking corners
         e.preventDefault();
@@ -1210,27 +1100,11 @@
         const startY = exportCenterY - tcH / 2;
 
         ctx.save();
-        ctx.fillStyle = `rgba(220, 38, 38, ${0.08 * overlayOpacity})`;
-        ctx.fillRect(startX, startY, tcW, tcH);
-
-        ctx.strokeStyle = `rgba(220, 38, 38, ${0.85 * overlayOpacity})`;
-        ctx.lineWidth = Math.max(2, Math.round(2 * scaleFactor));
-        ctx.setLineDash([Math.round(6 * scaleFactor), Math.round(4 * scaleFactor)]);
+        ctx.strokeStyle = `rgba(220, 38, 38, ${0.9 * overlayOpacity})`;
+        ctx.lineWidth = Math.max(1, Math.round(1.2 * scaleFactor));
+        ctx.setLineDash([Math.round(5 * scaleFactor), Math.round(4 * scaleFactor)]);
         ctx.strokeRect(startX, startY, tcW, tcH);
         ctx.setLineDash([]);
-
-        if (tcW > 40 * scaleFactor && tcH > 24 * scaleFactor) {
-          ctx.fillStyle = `rgba(220, 38, 38, ${0.9 * overlayOpacity})`;
-          const fontSize = Math.max(12, Math.round(12 * scaleFactor));
-          ctx.font = `bold ${fontSize}px sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.fillText('TRUNG CUNG', exportCenterX, startY + 4 * scaleFactor);
-
-          const subFontSize = Math.max(9, Math.round(9 * scaleFactor));
-          ctx.font = `${subFontSize}px sans-serif`;
-          ctx.fillText('(1/9 DT)', exportCenterX, startY + (4 + fontSize + 2) * scaleFactor);
-        }
         ctx.restore();
       }
 
