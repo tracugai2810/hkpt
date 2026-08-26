@@ -411,6 +411,7 @@
       const coords = parseCoordinatesOrUrl(query);
       if (coords && map) {
         map.setView([coords.lat, coords.lng], 19, { animate: true });
+        showUserLocationOnMap(coords.lat, coords.lng);
         return;
       }
 
@@ -418,6 +419,7 @@
       const geo = await geocodeAddress(query);
       if (geo && map) {
         map.setView([geo.lat, geo.lng], 19, { animate: true });
+        showUserLocationOnMap(geo.lat, geo.lng);
       } else {
         alert('Không tìm thấy địa điểm. Vui lòng nhập tọa độ (VD: 21.0285, 105.8542) hoặc dán link Google Maps.');
       }
