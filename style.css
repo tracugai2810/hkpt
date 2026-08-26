@@ -425,7 +425,7 @@ select.input-field {
 .compass-wrapper {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
   margin: 0 auto;
   aspect-ratio: 1 / 1;
 }
@@ -444,7 +444,7 @@ select.input-field {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 48%;
+  width: 70%;
   aspect-ratio: 1 / 1;
   z-index: 2;
 }
@@ -452,24 +452,26 @@ select.input-field {
 .compass-grid-overlay .chart-grid {
   width: 100%;
   height: 100%;
-  border: 1.5px solid #0f172a;
+  border: 2px solid #0f172a;
   background: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  border: 1.5px solid #0f172a;
-  background: #fff;
+  border: 2px solid #0f172a;
+  background: #ffffff;
   aspect-ratio: 1 / 1;
 }
 
 .chart-cell {
   position: relative;
   border: 1px solid #cbd5e1;
-  padding: 2px 3px;
+  padding: 4px 6px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -493,7 +495,7 @@ select.input-field {
   align-items: center;
   padding: 2px 0 0;
   width: 100%;
-  gap: 1px;
+  gap: 2px;
 }
 
 .cell-middle {
@@ -502,34 +504,35 @@ select.input-field {
   align-items: center;
   flex: 1;
   min-height: 0;
+  padding: 2px 0;
 }
 
 .cell-bottom {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 0 4px 2px;
+  padding: 0 4px 3px;
   position: relative;
   z-index: 2;
 }
 
 /* Star numbers - Clean, Scalable & High-Contrast */
 .star-son {
-  font-size: clamp(0.95rem, 3.2vw, 1.35rem);
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
   font-weight: 950;
   color: #1e40af;
   line-height: 1;
 }
 
 .star-huong {
-  font-size: clamp(0.95rem, 3.2vw, 1.35rem);
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
   font-weight: 950;
   color: #dc2626;
   line-height: 1;
 }
 
 .star-van {
-  font-size: clamp(1.05rem, 3.6vw, 1.5rem);
+  font-size: clamp(1.25rem, 4.4vw, 1.8rem);
   font-weight: 950;
   color: #0284c7;
   line-height: 1;
@@ -555,11 +558,11 @@ select.input-field {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  width: clamp(13px, 3.2vw, 18px);
-  height: clamp(13px, 3.2vw, 18px);
-  border: 1.2px solid;
+  width: clamp(16px, 4.2vw, 22px);
+  height: clamp(16px, 4.2vw, 22px);
+  border: 1.4px solid;
   border-radius: 50%;
-  font-size: clamp(0.65rem, 1.8vw, 0.82rem);
+  font-size: clamp(0.72rem, 2.2vw, 0.92rem);
   font-weight: 900;
   line-height: 1;
   flex-shrink: 0;
@@ -573,14 +576,14 @@ select.input-field {
 /* Direction Labels Inside Cell */
 .dir-label-cell {
   position: absolute;
-  bottom: 1px;
+  bottom: 3px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: clamp(0.58rem, 1.6vw, 0.75rem);
+  font-size: clamp(0.68rem, 2vw, 0.85rem);
   font-weight: 800;
   color: #334155;
   z-index: 1;
-  opacity: 0.45;
+  opacity: 0.5;
   pointer-events: none;
 }
 

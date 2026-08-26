@@ -290,6 +290,59 @@
     const R_OUTER = 290 * s;
 
     // ============================================================
+    // MODE 0: CHẾ ĐỘ CHỈ MŨI TÊN TỌA - HƯỚNG (MAIN CHART CLEAN VIEW)
+    // ============================================================
+    if (options.arrowsOnly) {
+      const sittingDegree = (facingDegree + 180) % 360;
+      const R_ARROW_OUT = 285 * s;
+      const R_GRID_BASE = 195 * s;
+
+      // Subtle dashed guide ring around the 9-palace grid
+      drawCircle(ctx, cx, cy, R_ARROW_OUT, 'rgba(15, 23, 42, 0.15)', 1.2 * s, [6 * s, 6 * s]);
+
+      // HƯỚNG (Facing) - Bold Red Ray & Arrowhead
+      drawRadialLine(ctx, cx, cy, R_GRID_BASE, R_ARROW_OUT + 8 * s, facingDegree, '#dc2626', 4.0 * s);
+      drawArrowhead(ctx, cx, cy, R_ARROW_OUT + 12 * s, facingDegree, 20 * s, '#dc2626');
+
+      // HƯỚNG Badge
+      const huongPos = getXY(cx, cy, R_ARROW_OUT - 24 * s, facingDegree);
+      ctx.save();
+      ctx.translate(huongPos.x, huongPos.y);
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      drawRoundRect(ctx, -24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('HƯỚNG', 0, 0);
+      ctx.restore();
+
+      // TỌA (Sitting) - Bold Blue Ray & Tailbar
+      drawRadialLine(ctx, cx, cy, R_GRID_BASE, R_ARROW_OUT + 8 * s, sittingDegree, '#1d4ed8', 4.0 * s);
+      drawTailBar(ctx, cx, cy, R_ARROW_OUT + 8 * s, sittingDegree, 26 * s, '#1d4ed8', 4.5 * s);
+
+      // TỌA Badge
+      const toaPos = getXY(cx, cy, R_ARROW_OUT - 24 * s, sittingDegree);
+      ctx.save();
+      ctx.translate(toaPos.x, toaPos.y);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.beginPath();
+      drawRoundRect(ctx, -20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TỌA', 0, 0);
+      ctx.restore();
+
+      ctx.restore();
+      return;
+    }
+
+    // ============================================================
     // MODE 1: CHẾ ĐỘ TỐI GIẢN (MINIMALIST 8-PALACE OVERLAY)
     // ============================================================
     if (isMinimal) {

@@ -285,11 +285,14 @@
         chartGrid.appendChild(cell);
     }
     
-    // Render compass around the chart grid (standard view keeps 3x3 grid)
+    // Render clean directional indicators (HƯỚNG arrow & TỌA tail) around the enlarged 3x3 grid
     try {
       const compassCanvas = document.getElementById('compassCanvas');
       if (compassCanvas && window.Compass) {
-        window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace, { showSectorStars: false });
+        window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace, {
+          showSectorStars: false,
+          arrowsOnly: true
+        });
       }
     } catch (e) {
       console.error('Compass render error:', e);
