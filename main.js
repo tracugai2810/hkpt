@@ -16,36 +16,41 @@
   // ];
 
   // DOM Elements
-  const inputDegree = document.getElementById('inputDegree');
-  const inputYear = document.getElementById('inputYear');
-  const inputVan = document.getElementById('inputVan');
-  const inputCurrentYear = document.getElementById('inputCurrentYear');
-  const inputCurrentMonth = document.getElementById('inputCurrentMonth');
-  const inputCurrentDay = document.getElementById('inputCurrentDay');
-  const inputCurrentHour = document.getElementById('inputCurrentHour');
-  const inputOwnerYear = document.getElementById('inputOwnerYear');
-  const inputOwnerGender = document.getElementById('inputOwnerGender');
-  const btnCalculate = document.getElementById('btnCalculate');
-  const btnCopyText = document.getElementById('btnCopyText');
-  const warningBox = document.getElementById('warningKhongVong');
-  const ownerInfo = document.getElementById('ownerInfo');
-  const chartInfo = document.getElementById('chartInfo');
-  const infoMain = document.getElementById('infoMain');
-  const chartContainer = document.getElementById('chartContainer');
-  const chartGrid = document.getElementById('chartGrid');
-  const infoPanel = document.getElementById('infoPanel');
-  const legendSection = document.getElementById('legendSection');
-  const actionContainer = document.getElementById('actionContainer');
-  const btnDownload = document.getElementById('btnDownload');
-  const exportArea = document.getElementById('exportArea');
-  const imageResultContainer = document.getElementById('imageResultContainer');
-  const finalImage = document.getElementById('finalImage');
+  let inputDegree;
+  let inputYear;
+  let inputVan;
+  let inputCurrentYear;
+  let inputCurrentMonth;
+  let inputCurrentDay;
+  let inputCurrentHour;
+  let inputOwnerYear;
+  let inputOwnerGender;
+  let btnCalculate;
+  let btnCopyText;
+  let warningBox;
+  let ownerInfo;
+  let chartInfo;
+  let infoMain;
+  let chartContainer;
+  let chartGrid;
+  let infoPanel;
+  let legendSection;
+  let actionContainer;
+  let btnDownload;
+  let exportArea;
+  let imageResultContainer;
+  let finalImage;
   
   let currentResult = null; // Store result for copy functionality
 
   // Set current real-time survey date & hour
   function setCurrentTime() {
     const now = new Date();
+    inputCurrentYear = inputCurrentYear || document.getElementById('inputCurrentYear');
+    inputCurrentMonth = inputCurrentMonth || document.getElementById('inputCurrentMonth');
+    inputCurrentDay = inputCurrentDay || document.getElementById('inputCurrentDay');
+    inputCurrentHour = inputCurrentHour || document.getElementById('inputCurrentHour');
+
     if (inputCurrentYear) inputCurrentYear.value = now.getFullYear();
     if (inputCurrentMonth) inputCurrentMonth.value = now.getMonth() + 1;
     if (inputCurrentDay) inputCurrentDay.value = now.getDate();
@@ -70,30 +75,66 @@
 
   // Initialize
   function init() {
+    // Resolve all DOM elements
+    inputDegree = document.getElementById('inputDegree');
+    inputYear = document.getElementById('inputYear');
+    inputVan = document.getElementById('inputVan');
+    inputCurrentYear = document.getElementById('inputCurrentYear');
+    inputCurrentMonth = document.getElementById('inputCurrentMonth');
+    inputCurrentDay = document.getElementById('inputCurrentDay');
+    inputCurrentHour = document.getElementById('inputCurrentHour');
+    inputOwnerYear = document.getElementById('inputOwnerYear');
+    inputOwnerGender = document.getElementById('inputOwnerGender');
+    btnCalculate = document.getElementById('btnCalculate');
+    btnCopyText = document.getElementById('btnCopyText');
+    warningBox = document.getElementById('warningKhongVong');
+    ownerInfo = document.getElementById('ownerInfo');
+    chartInfo = document.getElementById('chartInfo');
+    infoMain = document.getElementById('infoMain');
+    chartContainer = document.getElementById('chartContainer');
+    chartGrid = document.getElementById('chartGrid');
+    infoPanel = document.getElementById('infoPanel');
+    legendSection = document.getElementById('legendSection');
+    actionContainer = document.getElementById('actionContainer');
+    btnDownload = document.getElementById('btnDownload');
+    exportArea = document.getElementById('exportArea');
+    imageResultContainer = document.getElementById('imageResultContainer');
+    finalImage = document.getElementById('finalImage');
+
     // Set real-time survey date/time automatically
     setCurrentTime();
     
     // Auto-calculate Van on any input/change/keyup/paste/blur
-    ['input', 'change', 'keyup', 'paste', 'blur'].forEach(evt => {
-      inputYear.addEventListener(evt, updateVan);
-    });
+    if (inputYear) {
+      ['input', 'change', 'keyup', 'paste', 'blur'].forEach(evt => {
+        inputYear.addEventListener(evt, updateVan);
+      });
+    }
     
     // Handle decimal comma → dot
-    ['input', 'change', 'keyup', 'paste'].forEach(evt => {
-      inputDegree.addEventListener(evt, function() {
-        this.value = this.value.replace(',', '.');
+    if (inputDegree) {
+      ['input', 'change', 'keyup', 'paste'].forEach(evt => {
+        inputDegree.addEventListener(evt, function() {
+          this.value = this.value.replace(',', '.');
+        });
       });
-    });
+    }
     
     // Calculate button
-    btnCalculate.addEventListener('click', function() {
-      calculate(true);
-    });
+    if (btnCalculate) {
+      btnCalculate.addEventListener('click', function(e) {
+        if (e) e.preventDefault();
+        calculate(true);
+      });
+    }
     
     // Also calc on Enter key
     document.querySelectorAll('.input-field').forEach(el => {
       el.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') calculate(true);
+        if (e.key === 'Enter') {
+          if (e) e.preventDefault();
+          calculate(true);
+        }
       });
     });
     
@@ -113,12 +154,14 @@
     calculate(false);
     
     // Initialize FloorPlan module
-    if (window.FloorPlan) {
+    if (window.FloorPlan && window.FloorPlan.init) {
       window.FloorPlan.init();
     }
   }
 
   function updateVan() {
+    inputYear = inputYear || document.getElementById('inputYear');
+    inputVan = inputVan || document.getElementById('inputVan');
     if (!inputYear || !inputVan) return;
     const rawVal = (inputYear.value || '').trim();
     const year = parseInt(rawVal, 10);
@@ -326,19 +369,6 @@
         cell.appendChild(midDiv);
         cell.appendChild(botDiv);
         chartGrid.appendChild(cell);
-    }
-    
-    // Render clean directional indicators (HƯỚNG arrow & TỌA tail) around the enlarged 3x3 grid
-    try {
-      const compassCanvas = document.getElementById('compassCanvas');
-      if (compassCanvas && window.Compass) {
-        window.Compass.render(compassCanvas, result.facingDegree, result.facingMountain.palace, {
-          showSectorStars: false,
-          arrowsOnly: true
-        });
-      }
-    } catch (e) {
-      console.error('Compass render error:', e);
     }
     
     // Update floorplan overlay if active
@@ -549,6 +579,7 @@
         btnDownload.disabled = false;
         console.error('Download error:', err);
         alert('Có lỗi khi tạo ảnh tải về, vui lòng thử lại.');
+      });
     }, 40);
   }
 
@@ -624,5 +655,9 @@
   }
 
   // Start
-  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();

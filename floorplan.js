@@ -500,6 +500,7 @@
   }
 
   function calculateCenterPx() {
+    if (!floorplanImage) return;
     const curW = floorplanImage.offsetWidth || baseFitWidth || floorplanImage.width || 400;
     const curH = floorplanImage.offsetHeight || baseFitHeight || floorplanImage.height || 300;
     centerX = normalizedCenterX * curW;
@@ -563,6 +564,7 @@
   }
 
   function setupOverlay() {
+    if (!floorplanImage || !floorplanOverlay) return;
     calculateCenterPx();
     updateOverlayPosition();
     renderHelperCanvas();
