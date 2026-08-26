@@ -364,10 +364,17 @@
         
         topDiv.innerHTML = starsHTML;
         
-        // Middle: Vận tinh
+        // Check if this palace has Dac Thanh Mon Vuong Khi
+        const tmInfo = (tmAnalysis && tmAnalysis.dacThanhMonDetails) ? tmAnalysis.dacThanhMonDetails[palace] : null;
+        let tmIconHTML = '';
+        if (tmInfo) {
+          tmIconHTML = `<span class="tm-icon-inline" title="Đắc Thành Môn Vượng Khí: Cung ${tmInfo.palaceName} - Sơn ${tmInfo.mountainName} (${tmInfo.typeShort})">🚪</span>`;
+        }
+
+        // Middle: Vận tinh + icon TM nhỏ đặt ngang cạnh số Vận
         const midDiv = document.createElement('div');
         midDiv.className = 'cell-middle';
-        midDiv.innerHTML = `<span class="star-van">${data.van}</span>`;
+        midDiv.innerHTML = `<span class="star-van">${data.van}</span>${tmIconHTML}`;
         
         // Bottom: Sơn (left) & Hướng (right)
         const botDiv = document.createElement('div');
@@ -381,17 +388,6 @@
         cell.appendChild(topDiv);
         cell.appendChild(midDiv);
         cell.appendChild(botDiv);
-
-        // Check & attach Thanh Mon badge if this palace has Dac Thanh Mon Vuong Khi
-        if (tmAnalysis && tmAnalysis.dacThanhMonDetails && tmAnalysis.dacThanhMonDetails[palace]) {
-          const tmInfo = tmAnalysis.dacThanhMonDetails[palace];
-          cell.classList.add('cell-has-thanh-mon');
-          const tmBadge = document.createElement('div');
-          tmBadge.className = 'cell-thanh-mon-badge';
-          tmBadge.title = `Đắc Thành Môn Vượng Khí: Cung ${tmInfo.palaceName} - Sơn ${tmInfo.mountainName} (${tmInfo.typeShort})`;
-          tmBadge.innerHTML = `<span class="tm-icon">🚪</span><span class="tm-text">TM: ${tmInfo.mountainName}</span>`;
-          cell.appendChild(tmBadge);
-        }
 
         chartGrid.appendChild(cell);
       }

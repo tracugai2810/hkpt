@@ -194,35 +194,11 @@
   }
 
   /**
-   * Draws a green Door badge for Thanh Mon vượng khí on the compass ring.
-   */
-  function drawThanhMonBadge(ctx, cx, cy, radius, compassDeg, s, mtnName) {
-    const pos = getXY(cx, cy, radius, compassDeg);
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    const badgeW = 50 * s;
-    const badgeH = 19 * s;
-    ctx.fillStyle = '#059669';
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 1.2 * s;
-    ctx.beginPath();
-    drawRoundRect(ctx, -badgeW / 2, -badgeH / 2, badgeW, badgeH, 4 * s);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `900 ${Math.round(8.5 * s)}px "Inter", "Noto Sans", sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`🚪 TM: ${mtnName}`, 0, 0);
-    ctx.restore();
-  }
-
-  /**
    * Draws a star trio badge: [Sao Sơn (Xanh Dương)] [Sao Vận (Lớn)] [Sao Hướng (Đỏ)]
    * positioned directly in the given direction sector.
+   * If hasThanhMon is true, renders a small door icon 🚪 directly above the central Sao Vận.
    */
-  function drawSectorStarTrio(ctx, x, y, rotation, s, son, van, huong, isCenter) {
+  function drawSectorStarTrio(ctx, x, y, rotation, s, son, van, huong, isCenter, hasThanhMon) {
     ctx.save();
     ctx.translate(x, y);
     if (rotation !== 0) {
@@ -274,6 +250,18 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(huong !== undefined ? huong.toString() : '-', offsetSide, 1 * s);
+
+    // 4. Thành Môn Small Door Icon (nhỏ nhắn, nằm ngay trên số Vận, không text, không nền)
+    if (hasThanhMon) {
+      ctx.save();
+      ctx.font = `${Math.round(12 * s)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
+      ctx.shadowBlur = 4 * s;
+      ctx.fillText('🚪', 0, -18 * s);
+      ctx.restore();
+    }
 
     ctx.restore();
   }
@@ -457,29 +445,19 @@
           if (p === 5) continue;
           const dirDeg = PALACE_TO_DIR_DEG[p];
           const pData = palaces[p];
+          const hasTM = !!(thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.includes(p));
           if (pData && dirDeg !== null) {
             const starPos = getXY(cx, cy, R_STAR_SECTOR, dirDeg);
             const starRot = (dirDeg + 180) * Math.PI / 180;
-            drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false);
+            drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false, hasTM);
           }
         }
 
         // Draw Center Palace (Palace 5 - Trung Cung)
         const centerData = palaces[5];
         if (centerData) {
-          drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true);
+          drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true, false);
         }
-      }
-
-      // Render Thanh Mon door badges if active
-      if (thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.length > 0) {
-        thanhMon.dacThanhMonPalaces.forEach(p => {
-          const dirDeg = PALACE_TO_DIR_DEG[p];
-          const tmInfo = thanhMon.dacThanhMonDetails[p];
-          if (dirDeg !== null && tmInfo) {
-            drawThanhMonBadge(ctx, cx, cy, R_OUTER - 26 * s, dirDeg, s, tmInfo.mountainName);
-          }
-        });
       }
 
       // Center red dot
@@ -618,32 +596,22 @@
         if (p === 5) continue; // handle center separately
         const dirDeg = PALACE_TO_DIR_DEG[p];
         const pData = palaces[p];
+        const hasTM = !!(thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.includes(p));
         if (pData && dirDeg !== null) {
           const starPos = getXY(cx, cy, R_STAR_SECTOR, dirDeg);
           const starRot = (dirDeg + 180) * Math.PI / 180;
-          drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false);
+          drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false, hasTM);
         }
       }
 
       // Draw Center Palace (Palace 5 - Trung Cung)
       const centerData = palaces[5];
       if (centerData) {
-        drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true);
+        drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true, false);
       }
     }
 
-    // 12. Render Thanh Mon door badges if active
-    if (thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.length > 0) {
-      thanhMon.dacThanhMonPalaces.forEach(p => {
-        const dirDeg = PALACE_TO_DIR_DEG[p];
-        const tmInfo = thanhMon.dacThanhMonDetails[p];
-        if (dirDeg !== null && tmInfo) {
-          drawThanhMonBadge(ctx, cx, cy, R_OUTER - 26 * s, dirDeg, s, tmInfo.mountainName);
-        }
-      });
-    }
-
-    // 13. Restore context
+    // 12. Restore context
     ctx.restore();
   }
 

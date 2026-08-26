@@ -2805,34 +2805,18 @@ select.input-field {
 /* ============================================================
    Thành Môn Quyết (Castle Gate) Styling
    ============================================================ */
-.cell-thanh-mon-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  z-index: 4;
-  pointer-events: none;
-  line-height: 1.2;
-}
-
-.cell-thanh-mon-badge .tm-icon {
-  font-size: 0.72rem;
+.tm-icon-inline {
+  font-size: 0.95rem;
   line-height: 1;
+  margin-left: 4px;
+  cursor: help;
+  display: inline-block;
+  vertical-align: middle;
+  transition: transform 0.2s ease;
 }
 
-.cell-has-thanh-mon {
-  box-shadow: inset 0 0 0 1.5px #10b981;
-  background: rgba(16, 185, 129, 0.04);
+.tm-icon-inline:hover {
+  transform: scale(1.25);
 }
 
 .thanh-mon-container {
