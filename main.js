@@ -478,8 +478,8 @@
 
   /**
    * Universal Image Save / Share:
-   * - On iOS (iPhone / iPad): Uses native Web Share Sheet (to choose "Save Image" / "Lưu hình ảnh" into Photos).
-   * - On PC / Laptop / Android: Direct download / Web Share.
+   * - Tries Native Web Share Sheet first if supported.
+   * - Otherwise directly triggers browser file download (without any custom modal popups).
    */
   async function saveOrShareImage(canvasOrDataUrl, filename, title) {
     let blob = null;
@@ -504,36 +504,10 @@
       console.warn('Blob conversion error:', e);
     }
 
-    // Check if user is on iOS (iPhone / iPad / iPod)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-    // 1. FOR iOS: Try native Web Share Sheet first
-    if (isIOS) {
-      if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
-        try {
-          const file = new File([blob], filename || 'tinhban.png', { type: 'image/png', lastModified: Date.now() });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              title: title || 'Tinh Bàn Phong Thủy',
-            });
-            return;
-          }
-        } catch (err) {
-          if (err.name === 'AbortError') return; // User closed share sheet normally
-          console.warn('iOS navigator.share failed or gesture expired, showing modal preview fallback...', err);
-        }
-      }
-      // Fallback for iOS if share sheet fails or unsupported
-      showIOSImageModal(dataUrl, title, filename);
-      return;
-    }
-
-    // 2. FOR ANDROID: Try Web Share first if available
-    if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share && /Android/i.test(navigator.userAgent)) {
+    // 1. Try Native Web Share API (native iOS / Android Share Sheet)
+    if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
       try {
-        const file = new File([blob], filename || 'tinhban.png', { type: 'image/png' });
+        const file = new File([blob], filename || 'tinhban.png', { type: 'image/png', lastModified: Date.now() });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
@@ -542,44 +516,23 @@
           return;
         }
       } catch (err) {
-        if (err.name === 'AbortError') return;
+        if (err.name === 'AbortError') return; // User closed share sheet normally
+        console.warn('Native share failed, downloading file directly...', err);
       }
     }
 
-    // 3. FOR PC / LAPTOP & FALLBACK: Direct download
+    // 2. Direct File Download for iOS, Android, PC, Mac (Native browser download)
+    const downloadUrl = blob ? URL.createObjectURL(blob) : dataUrl;
     const link = document.createElement('a');
     link.download = filename || 'tinhban.png';
-    link.href = dataUrl;
+    link.href = downloadUrl;
+    link.rel = 'noopener';
     document.body.appendChild(link);
     link.click();
     setTimeout(() => {
       if (document.body.contains(link)) document.body.removeChild(link);
-    }, 200);
-  }
-
-  function showIOSImageModal(dataUrl, title, filename) {
-    const existing = document.querySelector('.ios-save-modal');
-    if (existing) existing.remove();
-
-    const modal = document.createElement('div');
-    modal.className = 'ios-save-modal';
-    modal.innerHTML = `
-      <div class="ios-save-content">
-        <div class="ios-save-hint">👉 Chạm và giữ vào ảnh để chọn <strong>"Lưu vào Ảnh"</strong></div>
-        <img src="${dataUrl}" class="ios-save-img" alt="${title || 'Tinh Bàn'}">
-        <div class="ios-save-actions">
-          <a href="${dataUrl}" download="${filename || 'tinhban.png'}" class="ios-save-btn ios-save-dl">📥 Mở Ảnh Gốc</a>
-          <button type="button" class="ios-save-btn ios-save-close">Đóng</button>
-        </div>
-      </div>
-    `;
-
-    modal.querySelector('.ios-save-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
-    });
-
-    document.body.appendChild(modal);
+      if (blob) URL.revokeObjectURL(downloadUrl);
+    }, 500);
   }
 
   window.saveOrShareImage = saveOrShareImage;
