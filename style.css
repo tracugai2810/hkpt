@@ -477,15 +477,15 @@ select.input-field {
   justify-content: space-between;
   min-height: 0;
   overflow: hidden;
-  transition: background-color var(--transition);
+  background: #ffffff;
 }
 
 .chart-cell:hover {
-  background: #f0fdfa;
+  background: #ffffff;
 }
 
 .chart-cell.center-cell {
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 /* Cell layout: 3 rows */

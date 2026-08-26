@@ -150,8 +150,7 @@
     // Initial Van calculation
     updateVan();
     
-    // Calculate initial chart immediately
-    calculate(false);
+    // Do not calculate automatically on load; calculate only when user clicks 'Lập Tinh Bàn'
     
     // Initialize FloorPlan module
     if (window.FloorPlan && window.FloorPlan.init) {
