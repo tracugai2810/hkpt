@@ -112,6 +112,10 @@
     if (year && year >= 1864) {
       const van = FlyingStar.getVan(year);
       inputVan.value = van;
+      const vanBadge = document.getElementById('vanBadge');
+      if (vanBadge) {
+        vanBadge.textContent = `Vận ${van}`;
+      }
     }
   }
 

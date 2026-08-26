@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Huyền Không Phi Tinh - Lập Tinh Bàn Phong Thủy</title>
   <meta name="description" content="Ứng dụng lập tinh bàn Huyền Không Phi Tinh phong thủy, hỗ trợ Hạ Quái và Thế Quái (Kiêm Hướng)">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,77 +21,113 @@
 
     <!-- Input Form -->
     <section class="input-section">
-      <div class="input-grid">
-        <div class="input-group">
-          <label for="inputVan">Vận</label>
-          <input type="number" id="inputVan" min="1" max="9" value="8" readonly class="input-field input-readonly">
-          <span class="input-hint">Tự động từ năm</span>
+      <div class="form-sections-wrapper">
+        <!-- Section 1: Hướng & Năm Nhà -->
+        <div class="form-block">
+          <div class="form-block-title">
+            <span class="block-num">1</span>
+            <span>Tọa Hướng & Vận Trạch</span>
+          </div>
+          <div class="input-grid grid-house">
+            <div class="input-group">
+              <label for="inputDegree">Số Độ Hướng (°)</label>
+              <input type="text" id="inputDegree" value="189" placeholder="0 - 360" class="input-field" inputmode="decimal">
+              <span class="input-hint">VD: 180.5</span>
+            </div>
+            <div class="input-group">
+              <label for="inputYear">Năm Nhập Trạch</label>
+              <input type="number" id="inputYear" min="1864" max="2103" value="2010" class="input-field">
+              <span class="input-hint">Năm xây / vào ở</span>
+            </div>
+            <div class="input-group group-van">
+              <label for="inputVan">Vận</label>
+              <div class="van-display-wrap">
+                <input type="number" id="inputVan" min="1" max="9" value="8" readonly class="input-field input-readonly">
+                <span class="van-badge" id="vanBadge">Vận 8</span>
+              </div>
+              <span class="input-hint">Tự động tính</span>
+            </div>
+          </div>
         </div>
-        <div class="input-group">
-          <label for="inputDegree">Số Độ Hướng</label>
-          <input type="text" id="inputDegree" value="189" placeholder="0 - 360" class="input-field" inputmode="decimal">
-          <span class="input-hint">VD: 180.5</span>
+
+        <!-- Section 2: Gia Chủ (Tùy chọn) -->
+        <div class="form-block">
+          <div class="form-block-title">
+            <span class="block-num">2</span>
+            <span>Gia Chủ (Tùy chọn)</span>
+          </div>
+          <div class="input-grid grid-owner">
+            <div class="input-group">
+              <label for="inputOwnerYear">Năm Sinh Gia Chủ</label>
+              <input type="number" id="inputOwnerYear" min="1900" max="2200" class="input-field" placeholder="VD: 1985">
+            </div>
+            <div class="input-group">
+              <label for="inputOwnerGender">Giới Tính</label>
+              <select id="inputOwnerGender" class="input-field">
+                <option value="1">Nam</option>
+                <option value="0">Nữ</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div class="input-group">
-          <label for="inputYear">Năm Nhập Trạch</label>
-          <input type="number" id="inputYear" min="1864" max="2103" value="2010" class="input-field">
-          <span class="input-hint">Năm xây/nhập nhà</span>
-        </div>
-        <div class="input-group">
-          <label for="inputCurrentYear">Năm Xem (Dương)</label>
-          <input type="number" id="inputCurrentYear" min="1900" max="2200" value="2026" class="input-field">
-        </div>
-        <div class="input-group">
-          <label for="inputOwnerYear">Năm Sinh Gia Chủ</label>
-          <input type="number" id="inputOwnerYear" min="1900" max="2200" class="input-field" placeholder="Tùy chọn">
-        </div>
-        <div class="input-group">
-          <label for="inputOwnerGender">Giới Tính</label>
-          <select id="inputOwnerGender" class="input-field">
-            <option value="1">Nam</option>
-            <option value="0">Nữ</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label for="inputCurrentMonth">Tháng Xem (Dương)</label>
-          <select id="inputCurrentMonth" class="input-field">
-            <option value="1">Tháng 1</option>
-            <option value="2" selected>Tháng 2</option>
-            <option value="3">Tháng 3</option>
-            <option value="4">Tháng 4</option>
-            <option value="5">Tháng 5</option>
-            <option value="6">Tháng 6</option>
-            <option value="7">Tháng 7</option>
-            <option value="8">Tháng 8</option>
-            <option value="9">Tháng 9</option>
-            <option value="10">Tháng 10</option>
-            <option value="11">Tháng 11</option>
-            <option value="12">Tháng 12</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label for="inputCurrentDay">Ngày Xem (Dương)</label>
-          <input type="number" id="inputCurrentDay" min="1" max="31" value="1" class="input-field">
-        </div>
-        <div class="input-group">
-          <label for="inputCurrentHour">Giờ Xem</label>
-          <select id="inputCurrentHour" class="input-field">
-            <option value="1">Tý (23:00 - 0:59)</option>
-            <option value="2">Sửu (1:00 - 2:59)</option>
-            <option value="3">Dần (3:00 - 4:59)</option>
-            <option value="4">Mão (5:00 - 6:59)</option>
-            <option value="5">Thìn (7:00 - 8:59)</option>
-            <option value="6">Tỵ (9:00 - 10:59)</option>
-            <option value="7">Ngọ (11:00 - 12:59)</option>
-            <option value="8">Mùi (13:00 - 14:59)</option>
-            <option value="9">Thân (15:00 - 16:59)</option>
-            <option value="10">Dậu (17:00 - 18:59)</option>
-            <option value="11">Tuất (19:00 - 20:59)</option>
-            <option value="12">Hợi (21:00 - 22:59)</option>
-          </select>
+
+        <!-- Section 3: Thời Điểm Xem (Dương Lịch) -->
+        <div class="form-block">
+          <div class="form-block-title">
+            <span class="block-num">3</span>
+            <span>Thời Điểm Khảo Sát (Dương Lịch)</span>
+          </div>
+          <div class="input-grid grid-datetime">
+            <div class="input-group">
+              <label for="inputCurrentYear">Năm</label>
+              <input type="number" id="inputCurrentYear" min="1900" max="2200" value="2026" class="input-field">
+            </div>
+            <div class="input-group">
+              <label for="inputCurrentMonth">Tháng</label>
+              <select id="inputCurrentMonth" class="input-field">
+                <option value="1">Tháng 1</option>
+                <option value="2" selected>Tháng 2</option>
+                <option value="3">Tháng 3</option>
+                <option value="4">Tháng 4</option>
+                <option value="5">Tháng 5</option>
+                <option value="6">Tháng 6</option>
+                <option value="7">Tháng 7</option>
+                <option value="8">Tháng 8</option>
+                <option value="9">Tháng 9</option>
+                <option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option>
+                <option value="12">Tháng 12</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="inputCurrentDay">Ngày</label>
+              <input type="number" id="inputCurrentDay" min="1" max="31" value="1" class="input-field">
+            </div>
+            <div class="input-group">
+              <label for="inputCurrentHour">Giờ Xem</label>
+              <select id="inputCurrentHour" class="input-field">
+                <option value="1">Tý (23:00 - 0:59)</option>
+                <option value="2">Sửu (1:00 - 2:59)</option>
+                <option value="3">Dần (3:00 - 4:59)</option>
+                <option value="4">Mão (5:00 - 6:59)</option>
+                <option value="5">Thìn (7:00 - 8:59)</option>
+                <option value="6">Tỵ (9:00 - 10:59)</option>
+                <option value="7">Ngọ (11:00 - 12:59)</option>
+                <option value="8">Mùi (13:00 - 14:59)</option>
+                <option value="9">Thân (15:00 - 16:59)</option>
+                <option value="10">Dậu (17:00 - 18:59)</option>
+                <option value="11">Tuất (19:00 - 20:59)</option>
+                <option value="12">Hợi (21:00 - 22:59)</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
-      <button id="btnCalculate" class="btn-calculate">Lập Tinh Bàn</button>
+
+      <button id="btnCalculate" class="btn-calculate" type="button">
+        <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        <span>Lập Tinh Bàn</span>
+      </button>
     </section>
 
     <!-- Export Area for Image Snapshot -->
@@ -127,31 +163,31 @@
 
       <!-- Info Panel Below Chart -->
       <div id="infoPanel" class="info-panel">
-        <div class="info-row">
-          <div class="info-item">
-            <span class="info-label">Vận</span>
+        <div class="info-row info-row-main">
+          <div class="info-item item-van">
+            <span class="info-label">VẬN</span>
             <span class="info-value" id="infoVan">-</span>
           </div>
-          <div class="info-item">
-            <span class="info-label">Độ</span>
+          <div class="info-item item-degree">
+            <span class="info-label">ĐỘ HƯỚNG</span>
             <span class="info-value" id="infoDegree">-</span>
           </div>
         </div>
-        <div class="info-row">
+        <div class="info-row info-row-sub">
           <div class="info-item">
-            <span class="info-label">Năm</span>
+            <span class="info-label">NĂM</span>
             <span class="info-value" id="infoYear">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Tháng</span>
+            <span class="info-label">THÁNG</span>
             <span class="info-value" id="infoMonth">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Ngày</span>
+            <span class="info-label">NGÀY</span>
             <span class="info-value" id="infoDay">-</span>
           </div>
           <div class="info-item">
-            <span class="info-label">Giờ</span>
+            <span class="info-label">GIỜ</span>
             <span class="info-value" id="infoHour">-</span>
           </div>
         </div>
@@ -160,17 +196,17 @@
 
     <!-- Actions -->
     <div id="actionContainer" class="action-container hidden">
-      <button id="btnCopyText" class="btn-download" style="margin-right: 10px; border-color: #6366f1; color: #4f46e5;">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1M8 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M8 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m0 0h2a2 2 0 0 1 2 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-        Văn Bản
+      <button id="btnCopyText" class="btn-action btn-action-copy" type="button">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1M8 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M8 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m0 0h2a2 2 0 0 1 2 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+        <span>Văn Bản</span>
       </button>
-      <button id="btnDownload" class="btn-download">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>
-        Lưu Ảnh
+      <button id="btnDownload" class="btn-action btn-action-download" type="button">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>
+        <span>Lưu Ảnh</span>
       </button>
-      <button id="btnUploadPlan" class="btn-download" style="margin-left: 10px; border-color: #f59e0b; color: #d97706;">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-        Bản Vẽ
+      <button id="btnUploadPlan" class="btn-action btn-action-plan" type="button">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+        <span>Bản Vẽ</span>
       </button>
       <input type="file" id="floorplanFileInput" accept="image/*" style="display:none;">
     </div>
