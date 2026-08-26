@@ -294,15 +294,15 @@
     // ============================================================
     if (options.arrowsOnly) {
       const sittingDegree = (facingDegree + 180) % 360;
-      const R_ARROW_OUT = 285 * s;
-      const R_GRID_BASE = 195 * s;
+      const R_ARROW_OUT = 294 * s;
+      const R_GRID_BASE = 250 * s;
 
-      // Subtle dashed guide ring around the 9-palace grid
-      drawCircle(ctx, cx, cy, R_ARROW_OUT, 'rgba(15, 23, 42, 0.15)', 1.2 * s, [6 * s, 6 * s]);
+      // Subtle boundary guide ring
+      drawCircle(ctx, cx, cy, R_ARROW_OUT + 2 * s, 'rgba(15, 23, 42, 0.12)', 1.2 * s, [6 * s, 6 * s]);
 
       // HƯỚNG (Facing) - Bold Red Ray & Arrowhead
-      drawRadialLine(ctx, cx, cy, R_GRID_BASE, R_ARROW_OUT + 8 * s, facingDegree, '#dc2626', 4.0 * s);
-      drawArrowhead(ctx, cx, cy, R_ARROW_OUT + 12 * s, facingDegree, 20 * s, '#dc2626');
+      drawRadialLine(ctx, cx, cy, R_GRID_BASE, R_ARROW_OUT + 4 * s, facingDegree, '#dc2626', 4.0 * s);
+      drawArrowhead(ctx, cx, cy, R_ARROW_OUT + 5 * s, facingDegree, 22 * s, '#dc2626');
 
       // HƯỚNG Badge
       const huongPos = getXY(cx, cy, R_ARROW_OUT - 24 * s, facingDegree);
@@ -310,18 +310,18 @@
       ctx.translate(huongPos.x, huongPos.y);
       ctx.fillStyle = '#dc2626';
       ctx.beginPath();
-      drawRoundRect(ctx, -24 * s, -9 * s, 48 * s, 18 * s, 4 * s);
+      drawRoundRect(ctx, -24 * s, -10 * s, 48 * s, 20 * s, 4 * s);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.font = `900 ${Math.round(10 * s)}px "Inter", "Noto Sans", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('HƯỚNG', 0, 0);
       ctx.restore();
 
       // TỌA (Sitting) - Bold Blue Ray & Tailbar
-      drawRadialLine(ctx, cx, cy, R_GRID_BASE, R_ARROW_OUT + 8 * s, sittingDegree, '#1d4ed8', 4.0 * s);
-      drawTailBar(ctx, cx, cy, R_ARROW_OUT + 8 * s, sittingDegree, 26 * s, '#1d4ed8', 4.5 * s);
+      drawRadialLine(ctx, cx, cy, R_GRID_BASE, R_ARROW_OUT + 4 * s, sittingDegree, '#1d4ed8', 4.0 * s);
+      drawTailBar(ctx, cx, cy, R_ARROW_OUT + 4 * s, sittingDegree, 30 * s, '#1d4ed8', 5.0 * s);
 
       // TỌA Badge
       const toaPos = getXY(cx, cy, R_ARROW_OUT - 24 * s, sittingDegree);
@@ -329,10 +329,10 @@
       ctx.translate(toaPos.x, toaPos.y);
       ctx.fillStyle = '#1d4ed8';
       ctx.beginPath();
-      drawRoundRect(ctx, -20 * s, -9 * s, 40 * s, 18 * s, 4 * s);
+      drawRoundRect(ctx, -20 * s, -10 * s, 40 * s, 20 * s, 4 * s);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `900 ${Math.round(9.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+      ctx.font = `900 ${Math.round(10 * s)}px "Inter", "Noto Sans", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('TỌA', 0, 0);

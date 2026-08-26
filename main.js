@@ -378,7 +378,7 @@
   /**
    * Universal Image Save / Share:
    * - On iOS (iPhone / iPad): Uses native Web Share Sheet (to choose "Save Image" / "Lưu hình ảnh" into Photos).
-   * - On PC / Laptop / Android: Directly downloads the .png file to the device.
+   * - On PC / Laptop / Android: Direct download / Web Share.
    */
   async function saveOrShareImage(canvasOrDataUrl, filename, title) {
     let blob = null;
@@ -388,9 +388,16 @@
       if (typeof canvasOrDataUrl === 'string') {
         dataUrl = canvasOrDataUrl;
         blob = dataURItoBlob(dataUrl);
-      } else if (canvasOrDataUrl && canvasOrDataUrl.toDataURL) {
-        dataUrl = canvasOrDataUrl.toDataURL('image/png', 1.0);
-        blob = dataURItoBlob(dataUrl);
+      } else if (canvasOrDataUrl) {
+        if (canvasOrDataUrl.toBlob) {
+          blob = await new Promise(r => canvasOrDataUrl.toBlob(r, 'image/png'));
+        }
+        if (canvasOrDataUrl.toDataURL) {
+          dataUrl = canvasOrDataUrl.toDataURL('image/png', 1.0);
+        }
+        if (!blob && dataUrl) {
+          blob = dataURItoBlob(dataUrl);
+        }
       }
     } catch (e) {
       console.warn('Blob conversion error:', e);
@@ -400,11 +407,11 @@
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // 1. FOR iOS (iPhone / iPad): Use native Share Sheet to save to Photos / Thư viện ảnh
+    // 1. FOR iOS: Try native Web Share Sheet first
     if (isIOS) {
       if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
         try {
-          const file = new File([blob], filename, { type: 'image/png' });
+          const file = new File([blob], filename || 'tinhban.png', { type: 'image/png', lastModified: Date.now() });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
@@ -413,25 +420,43 @@
             return;
           }
         } catch (err) {
-          if (err.name === 'AbortError') return; // User cancelled share sheet
-          console.warn('iOS Share failed, showing modal preview fallback...', err);
+          if (err.name === 'AbortError') return; // User closed share sheet normally
+          console.warn('iOS navigator.share failed or gesture expired, showing modal preview fallback...', err);
         }
       }
       // Fallback for iOS if share sheet fails or unsupported
-      showIOSImageModal(dataUrl, title);
+      showIOSImageModal(dataUrl, title, filename);
       return;
     }
 
-    // 2. FOR PC, LAPTOP & ANDROID: Direct file download
+    // 2. FOR ANDROID: Try Web Share first if available
+    if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share && /Android/i.test(navigator.userAgent)) {
+      try {
+        const file = new File([blob], filename || 'tinhban.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: title || 'Tinh Bàn Phong Thủy',
+          });
+          return;
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // 3. FOR PC / LAPTOP & FALLBACK: Direct download
     const link = document.createElement('a');
-    link.download = filename;
+    link.download = filename || 'tinhban.png';
     link.href = dataUrl;
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    setTimeout(() => {
+      if (document.body.contains(link)) document.body.removeChild(link);
+    }, 200);
   }
 
-  function showIOSImageModal(dataUrl, title) {
+  function showIOSImageModal(dataUrl, title, filename) {
     const existing = document.querySelector('.ios-save-modal');
     if (existing) existing.remove();
 
@@ -439,9 +464,12 @@
     modal.className = 'ios-save-modal';
     modal.innerHTML = `
       <div class="ios-save-content">
-        <div class="ios-save-hint">👉 Chạm và giữ vào ảnh để chọn "Lưu vào Ảnh"</div>
+        <div class="ios-save-hint">👉 Chạm và giữ vào ảnh để chọn <strong>"Lưu vào Ảnh"</strong></div>
         <img src="${dataUrl}" class="ios-save-img" alt="${title || 'Tinh Bàn'}">
-        <button class="ios-save-close">Đóng</button>
+        <div class="ios-save-actions">
+          <a href="${dataUrl}" download="${filename || 'tinhban.png'}" class="ios-save-btn ios-save-dl">📥 Mở Ảnh Gốc</a>
+          <button type="button" class="ios-save-btn ios-save-close">Đóng</button>
+        </div>
       </div>
     `;
 
@@ -461,29 +489,24 @@
     btnDownload.innerText = 'Đang tạo ảnh...';
     btnDownload.disabled = true;
 
-    // Apply export-mode temporarily for clean snapshot
-    exportArea.classList.add('export-mode');
-
+    // Direct snapshot with high quality
     setTimeout(() => {
       html2canvas(exportArea, {
-        scale: 4,
+        scale: 3,
         useCORS: true,
         logging: false,
-        width: 580,
+        backgroundColor: '#ffffff',
       }).then(canvas => {
-        exportArea.classList.remove('export-mode');
         btnDownload.innerHTML = origHTML;
         btnDownload.disabled = false;
         const filename = `tinhban_${document.getElementById('inputVan').value}_${document.getElementById('inputDegree').value}.png`;
         saveOrShareImage(canvas, filename, 'Tinh Bàn Huyền Không');
       }).catch(err => {
-        exportArea.classList.remove('export-mode');
         btnDownload.innerHTML = origHTML;
         btnDownload.disabled = false;
         console.error('Download error:', err);
         alert('Có lỗi khi tạo ảnh tải về, vui lòng thử lại.');
-      });
-    }, 60);
+    }, 40);
   }
 
   function copyChartToText() {

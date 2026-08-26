@@ -417,7 +417,7 @@ select.input-field {
   display: none !important;
 }
 
-/* Chart Container & Compass Wrapper */
+/* Chart Container & Flying Star Grid */
 .chart-container {
   margin-bottom: 16px;
 }
@@ -425,26 +425,19 @@ select.input-field {
 .compass-wrapper {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
   aspect-ratio: 1 / 1;
 }
 
 .compass-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+  display: none !important;
 }
 
 .compass-grid-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 70%;
+  position: relative;
+  width: 100%;
+  height: 100%;
   aspect-ratio: 1 / 1;
   z-index: 2;
 }
@@ -452,9 +445,9 @@ select.input-field {
 .compass-grid-overlay .chart-grid {
   width: 100%;
   height: 100%;
-  border: 2px solid #0f172a;
+  border: 2.5px solid #0f172a;
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
@@ -463,7 +456,7 @@ select.input-field {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  border: 2px solid #0f172a;
+  border: 2.5px solid #0f172a;
   background: #ffffff;
   aspect-ratio: 1 / 1;
 }
@@ -471,7 +464,7 @@ select.input-field {
 .chart-cell {
   position: relative;
   border: 1px solid #cbd5e1;
-  padding: 4px 6px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -495,7 +488,7 @@ select.input-field {
   align-items: center;
   padding: 2px 0 0;
   width: 100%;
-  gap: 2px;
+  gap: 4px;
 }
 
 .cell-middle {
@@ -511,28 +504,28 @@ select.input-field {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 0 4px 3px;
+  padding: 0 6px 4px;
   position: relative;
   z-index: 2;
 }
 
 /* Star numbers - Clean, Scalable & High-Contrast */
 .star-son {
-  font-size: clamp(1.15rem, 4vw, 1.6rem);
+  font-size: clamp(1.35rem, 5.2vw, 1.95rem);
   font-weight: 950;
   color: #1e40af;
   line-height: 1;
 }
 
 .star-huong {
-  font-size: clamp(1.15rem, 4vw, 1.6rem);
+  font-size: clamp(1.35rem, 5.2vw, 1.95rem);
   font-weight: 950;
   color: #dc2626;
   line-height: 1;
 }
 
 .star-van {
-  font-size: clamp(1.25rem, 4.4vw, 1.8rem);
+  font-size: clamp(1.55rem, 6vw, 2.25rem);
   font-weight: 950;
   color: #0284c7;
   line-height: 1;
@@ -558,11 +551,11 @@ select.input-field {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  width: clamp(16px, 4.2vw, 22px);
-  height: clamp(16px, 4.2vw, 22px);
-  border: 1.4px solid;
+  width: clamp(20px, 5.4vw, 26px);
+  height: clamp(20px, 5.4vw, 26px);
+  border: 1.6px solid;
   border-radius: 50%;
-  font-size: clamp(0.72rem, 2.2vw, 0.92rem);
+  font-size: clamp(0.82rem, 2.6vw, 1.05rem);
   font-weight: 900;
   line-height: 1;
   flex-shrink: 0;
@@ -576,14 +569,16 @@ select.input-field {
 /* Direction Labels Inside Cell */
 .dir-label-cell {
   position: absolute;
-  bottom: 3px;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: clamp(0.68rem, 2vw, 0.85rem);
+  font-size: clamp(0.75rem, 2.4vw, 0.95rem);
   font-weight: 800;
-  color: #334155;
+  color: #475569;
+  background: rgba(241, 245, 249, 0.9);
+  padding: 2px 7px;
+  border-radius: 6px;
   z-index: 1;
-  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -1267,7 +1262,9 @@ select.input-field {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.88);
+  height: 100dvh;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
   z-index: 99999;
   display: flex;
   flex-direction: column;
@@ -1275,12 +1272,13 @@ select.input-field {
   justify-content: center;
   padding: 16px;
   box-sizing: border-box;
+  animation: fadeIn 0.25s ease;
 }
 
 .ios-save-content {
   position: relative;
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 94%;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1288,39 +1286,68 @@ select.input-field {
 }
 
 .ios-save-hint {
-  color: #fff;
-  font-size: 0.95rem;
+  color: #ffffff;
+  font-size: 0.92rem;
   font-weight: 700;
   margin-bottom: 12px;
-  background: var(--accent);
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
   padding: 8px 18px;
   border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .ios-save-img {
   max-width: 100%;
   max-height: 65vh;
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5);
   display: block;
+  background: #ffffff;
+}
+
+.ios-save-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.ios-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-main);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: none;
+  touch-action: manipulation;
+}
+
+.ios-save-dl {
+  background: #0f766e;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.4);
+}
+
+.ios-save-dl:hover {
+  background: #115e59;
 }
 
 .ios-save-close {
-  margin-top: 14px;
-  padding: 8px 24px;
-  background: #374151;
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  background: #334155;
+  color: #ffffff;
 }
 
 .ios-save-close:hover {
-  background: #4b5563;
+  background: #475569;
 }
 
 /* ============================================================
