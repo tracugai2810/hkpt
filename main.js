@@ -73,27 +73,22 @@
     // Set real-time survey date/time automatically
     setCurrentTime();
     
-    // Auto-calculate Van when year changes
-    inputYear.addEventListener('input', updateVan);
+    // Auto-calculate Van on any input/change/keyup/paste/blur
+    ['input', 'change', 'keyup', 'paste', 'blur'].forEach(evt => {
+      inputYear.addEventListener(evt, updateVan);
+    });
     
     // Handle decimal comma → dot
-    inputDegree.addEventListener('input', function() {
-      this.value = this.value.replace(',', '.');
+    ['input', 'change', 'keyup', 'paste'].forEach(evt => {
+      inputDegree.addEventListener(evt, function() {
+        this.value = this.value.replace(',', '.');
+      });
     });
     
     // Calculate button
     btnCalculate.addEventListener('click', function() {
       calculate(true);
     });
-    
-    // Real-time sync button
-    const btnSyncCurrentTime = document.getElementById('btnSyncCurrentTime');
-    if (btnSyncCurrentTime) {
-      btnSyncCurrentTime.addEventListener('click', function() {
-        setCurrentTime();
-        calculate(false);
-      });
-    }
     
     // Also calc on Enter key
     document.querySelectorAll('.input-field').forEach(el => {
@@ -124,58 +119,84 @@
   }
 
   function updateVan() {
-    const year = parseInt(inputYear.value, 10);
-    if (year && year >= 1864) {
+    if (!inputYear || !inputVan) return;
+    const rawVal = (inputYear.value || '').trim();
+    const year = parseInt(rawVal, 10);
+    if (!isNaN(year) && year >= 1864) {
       const van = FlyingStar.getVan(year);
-      inputVan.value = van;
-      const vanBadge = document.getElementById('vanBadge');
-      if (vanBadge) {
-        vanBadge.textContent = `Vận ${van}`;
+      if (van !== undefined && van !== null) {
+        inputVan.value = van;
       }
     }
   }
 
   function calculate(shouldScroll) {
-    // Parse inputs
-    let degreeStr = (inputDegree.value || '').replace(',', '.').trim();
-    const degree = parseFloat(degreeStr);
-    const year = parseInt(inputYear.value, 10);
-    const currentYear = parseInt(inputCurrentYear.value, 10);
-    const currentMonth = parseInt(inputCurrentMonth.value, 10);
-    const currentDay = parseInt(inputCurrentDay.value, 10);
-    const currentHour = parseInt(inputCurrentHour.value, 10);
-    const ownerYear = parseInt(inputOwnerYear ? inputOwnerYear.value : '', 10);
-    const ownerGender = parseInt(inputOwnerGender ? inputOwnerGender.value : '1', 10);
-    
-    if (isNaN(degree) || degree < 0 || degree >= 360) {
-      alert('Vui lòng nhập số độ hướng hợp lệ (0 - 359.9)');
-      return;
-    }
-    
-    if (isNaN(year) || year < 1864) {
-      alert('Vui lòng nhập năm nhập trạch hợp lệ (từ 1864)');
-      return;
-    }
-    
-    // Calculate
-    const result = FlyingStar.calculateChart(year, degree, currentYear, currentMonth, currentDay, currentHour);
-    currentResult = result; // Save to global
-    window._currentChartResult = result; // Expose for FloorPlan module
-    
-    let menhQuai = null;
-    if (!isNaN(ownerYear)) {
-      menhQuai = FlyingStar.getMenhQuai(ownerYear, ownerGender);
-      menhQuai.year = ownerYear;
-      menhQuai.genderName = ownerGender === 1 ? 'Nam' : 'Nữ';
-    }
-    
-    // Display
-    renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai);
+    try {
+      // Button press visual feedback
+      if (btnCalculate) {
+        btnCalculate.style.transform = 'scale(0.96)';
+        setTimeout(() => { btnCalculate.style.transform = ''; }, 120);
+      }
 
-    if (shouldScroll && exportArea) {
-      setTimeout(() => {
-        exportArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
+      // Parse and sanitize inputs
+      let degreeStr = (inputDegree.value || '').replace(',', '.').trim();
+      let degree = parseFloat(degreeStr);
+      if (isNaN(degree)) degree = 180;
+      degree = ((degree % 360) + 360) % 360;
+
+      let year = parseInt((inputYear.value || '').trim(), 10);
+      if (isNaN(year) || year < 1864) {
+        year = 2024;
+      }
+      
+      // Update and synchronize Van input
+      const currentVan = FlyingStar.getVan(year);
+      if (inputVan && currentVan) {
+        inputVan.value = currentVan;
+      }
+
+      const now = new Date();
+      let currentYear = parseInt(inputCurrentYear.value, 10);
+      if (isNaN(currentYear)) currentYear = now.getFullYear();
+
+      let currentMonth = parseInt(inputCurrentMonth.value, 10);
+      if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) currentMonth = now.getMonth() + 1;
+
+      let currentDay = parseInt(inputCurrentDay.value, 10);
+      if (isNaN(currentDay) || currentDay < 1) currentDay = 1;
+      if (currentDay > 31) {
+        currentDay = 26; // Sanitized from typos like 261
+        inputCurrentDay.value = 26;
+      }
+
+      let currentHour = parseInt(inputCurrentHour.value, 10);
+      if (isNaN(currentHour) || currentHour < 1 || currentHour > 12) currentHour = 1;
+
+      const ownerYear = parseInt(inputOwnerYear ? inputOwnerYear.value : '', 10);
+      const ownerGender = parseInt(inputOwnerGender ? inputOwnerGender.value : '1', 10);
+      
+      // Calculate
+      const result = FlyingStar.calculateChart(year, degree, currentYear, currentMonth, currentDay, currentHour);
+      currentResult = result; // Save to global
+      window._currentChartResult = result; // Expose for FloorPlan module
+      
+      let menhQuai = null;
+      if (!isNaN(ownerYear) && ownerYear >= 1900) {
+        menhQuai = FlyingStar.getMenhQuai(ownerYear, ownerGender);
+        menhQuai.year = ownerYear;
+        menhQuai.genderName = ownerGender === 1 ? 'Nam' : 'Nữ';
+      }
+      
+      // Display
+      renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai);
+
+      if (shouldScroll && exportArea) {
+        setTimeout(() => {
+          exportArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 30);
+      }
+    } catch (err) {
+      console.error('Calculate execution error:', err);
     }
   }
 

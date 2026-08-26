@@ -39,12 +39,9 @@
               <input type="text" id="inputYear" value="2010" placeholder="Năm nhập trạch" class="input-field" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
               <span class="input-hint">Năm xây / vào ở</span>
             </div>
-            <div class="input-group group-van">
+            <div class="input-group">
               <label for="inputVan">Vận</label>
-              <div class="van-display-wrap">
-                <input type="text" id="inputVan" value="8" readonly class="input-field input-readonly">
-                <span class="van-badge" id="vanBadge">Vận 8</span>
-              </div>
+              <input type="text" id="inputVan" value="8" readonly class="input-field input-readonly">
               <span class="input-hint">Tự động tính</span>
             </div>
           </div>
@@ -73,12 +70,9 @@
 
         <!-- Section 3: Thời Điểm Xem (Dương Lịch) -->
         <div class="form-block">
-          <div class="form-block-title" style="justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="block-num">3</span>
-              <span>Thời Điểm Khảo Sát (Dương Lịch)</span>
-            </div>
-            <button type="button" id="btnSyncCurrentTime" class="fp-mini-btn" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;" title="Cập nhật thời gian hiện tại">🕒 Hiện Tại</button>
+          <div class="form-block-title">
+            <span class="block-num">3</span>
+            <span>Thời Điểm Khảo Sát (Dương Lịch)</span>
           </div>
           <div class="input-grid grid-datetime">
             <div class="input-group">
