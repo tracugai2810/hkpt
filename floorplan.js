@@ -102,13 +102,20 @@
       return;
     }
 
-    // 1. Upload button
-    btnUploadPlan.addEventListener('click', function() {
-      floorplanFileInput.click();
-    });
+    // 1. Upload button / label
+    if (btnUploadPlan) {
+      btnUploadPlan.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (floorplanFileInput) floorplanFileInput.click();
+        }
+      });
+    }
 
     // 2. File input change
-    floorplanFileInput.addEventListener('change', handleFileUpload);
+    if (floorplanFileInput) {
+      floorplanFileInput.addEventListener('change', handleFileUpload);
+    }
 
     // 3. Star Chart Size slider
     if (sizeSlider) {
@@ -1158,6 +1165,15 @@
         btnExportFloorplan.innerText = '💾 Tải Ảnh';
         btnExportFloorplan.disabled = false;
       }
+    }
+  }
+
+  // Auto initialize on DOM ready
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
     }
   }
 
