@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
 </head>
@@ -30,9 +31,12 @@
           </div>
           <div class="input-grid grid-house">
             <div class="input-group">
-              <label for="inputDegree">Số Độ Hướng (°)</label>
+              <div class="input-label-row">
+                <label for="inputDegree">Số Độ Hướng (°)</label>
+                <button type="button" id="btnOpenSatellite" class="btn-sat-trigger" title="Đo hướng nhà từ vệ tinh Google / ESRI">🛰️ Đo Vệ Tinh</button>
+              </div>
               <input type="text" id="inputDegree" value="189" placeholder="0 - 360" class="input-field" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
-              <span class="input-hint">VD: 180.5</span>
+              <span class="input-hint">VD: 180.5 (hoặc bấm Đo Vệ Tinh)</span>
             </div>
             <div class="input-group">
               <label for="inputYear">Năm Nhập Trạch</label>
@@ -315,12 +319,82 @@
     </div>
   </div>
 
+  <!-- Satellite Compass Measurement Modal -->
+  <div id="satelliteModal" class="sat-modal hidden">
+    <div class="sat-modal-backdrop"></div>
+    <div class="sat-modal-container">
+      <div class="sat-modal-header">
+        <div class="sat-header-title">
+          <span class="sat-header-icon">🛰️</span>
+          <div>
+            <h3>Đo Hướng Nhà Từ Ảnh Vệ Tinh</h3>
+            <p>Độ chính xác chuẩn từng 0.1° theo trắc địa vệ tinh toàn cầu</p>
+          </div>
+        </div>
+        <button type="button" id="btnCloseSatModal" class="sat-close-btn" title="Đóng">✕</button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="sat-search-bar">
+        <div class="sat-search-input-wrap">
+          <input type="text" id="satSearchInput" class="sat-search-input" placeholder="Dán tọa độ (VD: 21.0285, 105.8542) hoặc link Google Maps...">
+          <button type="button" id="btnSatSearch" class="sat-search-btn">Tìm Vị Trí</button>
+        </div>
+        <div class="sat-quick-tools">
+          <button type="button" id="btnSatCurrentLocation" class="sat-tool-btn" title="Lấy vị trí GPS hiện tại">📍 Vị Trí Của Tôi</button>
+          <div class="sat-layer-toggle">
+            <button type="button" id="btnLayerGoogleHybrid" class="sat-layer-btn active" title="Ảnh vệ tinh Google kèm tên đường">Google Vệ Tinh</button>
+            <button type="button" id="btnLayerEsri" class="sat-layer-btn" title="Ảnh vệ tinh ESRI độ nét cao">ESRI Vệ Tinh</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instruction banner -->
+      <div class="sat-instruction" id="satInstruction">
+        👉 <strong>Bước 1:</strong> Zoom vào nóc nhà, click <strong>Điểm 1</strong> rồi click <strong>Điểm 2</strong> dọc theo mép tường mặt tiền nhà.
+      </div>
+
+      <!-- Map Container -->
+      <div class="sat-map-wrapper">
+        <div id="satMap" class="sat-map"></div>
+      </div>
+
+      <!-- Result & Adjustment Bar -->
+      <div class="sat-result-bar">
+        <div class="sat-result-info">
+          <div class="sat-result-main">
+            <span class="sat-res-label">HƯỚNG ĐO ĐƯỢC:</span>
+            <strong class="sat-res-degree" id="satResultDegree">0.0°</strong>
+            <span class="sat-res-name" id="satResultName">-</span>
+          </div>
+          <div class="sat-result-sub" id="satResultSub">
+            Nhấp 2 điểm trên nóc nhà để bắt đầu đo
+          </div>
+        </div>
+
+        <div class="sat-actions-row">
+          <div class="sat-fine-tune">
+            <button type="button" id="btnSatMinusHalf" class="sat-mini-btn" title="Giảm 0.5 độ">- 0.5°</button>
+            <button type="button" id="btnSatPlusHalf" class="sat-mini-btn" title="Tăng 0.5 độ">+ 0.5°</button>
+            <button type="button" id="btnSatFlipNormal" class="sat-mini-btn sat-btn-flip" title="Đảo ngược 180 độ hướng mũi tên">⇄ Đảo Hướng (180°)</button>
+            <button type="button" id="btnSatResetPoints" class="sat-mini-btn sat-btn-reset" title="Đo lại từ đầu">↺ Đo Lại</button>
+          </div>
+          <button type="button" id="btnSatApplyDegree" class="sat-btn-apply" disabled>
+            ✓ Áp Dụng Số Độ Này
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="flyingstar.js"></script>
   <script src="loan-dau-rules.js"></script>
   <script src="fengshui-rules.js"></script>
   <script src="compass.js"></script>
   <script src="floorplan.js"></script>
+  <script src="satellite-compass.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
