@@ -342,7 +342,6 @@ select.input-field {
   border-radius: 20px;
   letter-spacing: 0.01em;
   box-shadow: var(--shadow-xs);
-  animation: fadeIn 0.4s ease;
   text-align: center;
 }
 
@@ -350,22 +349,26 @@ select.input-field {
 .chart-info {
   text-align: center;
   margin-bottom: 12px;
-  animation: fadeIn 0.4s ease;
 }
 
 .info-main {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: #0f172a;
   line-height: 1.5;
+}
+
+.info-main strong {
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .info-main .chart-type-badge {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 800;
   margin-left: 6px;
   vertical-align: middle;
   letter-spacing: 0.02em;
@@ -399,11 +402,15 @@ select.input-field {
   padding: 16px;
   box-sizing: border-box;
   font-family: var(--font-main);
-  color: #000;
+  color: #0f172a;
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
   overflow: hidden;
+}
+
+.export-area * {
+  animation: none !important;
 }
 
 .export-area-img-overlay {
@@ -591,13 +598,12 @@ select.input-field {
 
 /* ---- Info Panel Below Chart ---- */
 .info-panel {
-  background: var(--bg-card);
+  background: #ffffff;
   border-radius: var(--radius);
   padding: 12px 14px;
   box-shadow: var(--shadow-sm);
   border: 1.5px solid #0f766e;
   margin-bottom: 12px;
-  animation: fadeIn 0.4s ease;
 }
 
 .info-row-main {
@@ -622,8 +628,8 @@ select.input-field {
 }
 
 .info-label {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
   color: #0f766e;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -631,13 +637,13 @@ select.input-field {
 }
 
 .info-value {
-  font-size: 1.02rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: #0f172a;
   background: #f8fafc;
   padding: 6px 2px;
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  border: 1.5px solid #cbd5e1;
   width: 100%;
   text-align: center;
   box-sizing: border-box;

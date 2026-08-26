@@ -491,8 +491,11 @@
   async function handleDownloadButtonClick(e) {
     if (e) e.preventDefault();
 
-    // 1. If cached file is ready on mobile / iOS, IMMEDIATELY trigger native Web Share Sheet!
-    if (cachedChartFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [cachedChartFile] }) && navigator.share) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // 1. On iPhone / iPad: IMMEDIATELY trigger native iOS Share Sheet!
+    if (isIOS && cachedChartFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [cachedChartFile] }) && navigator.share) {
       try {
         await navigator.share({
           files: [cachedChartFile],
@@ -501,11 +504,11 @@
         return;
       } catch (err) {
         if (err.name === 'AbortError') return; // User closed share sheet
-        console.warn('Share sheet was dismissed or failed, downloading directly...', err);
+        console.warn('iOS Share sheet failed, downloading directly...', err);
       }
     }
 
-    // 2. Otherwise generate snapshot and trigger direct download
+    // 2. On PC, Android, Mac: Direct file download
     downloadChart();
   }
 
@@ -528,8 +531,8 @@
 
   /**
    * Universal Image Save / Share:
-   * - Tries Native Web Share Sheet first if supported.
-   * - Otherwise directly triggers browser file download (without any custom modal popups).
+   * - On iOS: Native Share Sheet (Save to Photos).
+   * - On Android, PC, Mac: Direct file download.
    */
   async function saveOrShareImage(canvasOrDataUrl, filename, title) {
     let blob = null;
@@ -554,8 +557,11 @@
       console.warn('Blob conversion error:', e);
     }
 
-    // 1. Try Native Web Share API (native iOS / Android Share Sheet)
-    if (blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // 1. For iOS (iPhone / iPad): Try Native Share Sheet
+    if (isIOS && blob && typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
       try {
         const file = new File([blob], filename || 'tinhban.png', { type: 'image/png', lastModified: Date.now() });
         if (navigator.canShare({ files: [file] })) {
@@ -567,11 +573,11 @@
         }
       } catch (err) {
         if (err.name === 'AbortError') return; // User closed share sheet normally
-        console.warn('Native share failed, downloading file directly...', err);
+        console.warn('iOS Native share failed, downloading file directly...', err);
       }
     }
 
-    // 2. Direct File Download for iOS, Android, PC, Mac (Native browser download)
+    // 2. Direct File Download for Android, PC, Mac
     const downloadUrl = blob ? URL.createObjectURL(blob) : dataUrl;
     const link = document.createElement('a');
     link.download = filename || 'tinhban.png';
