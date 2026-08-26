@@ -71,7 +71,6 @@
     guideLinesCheckbox = document.getElementById('guideLinesCheckbox');
     minimalModeCheckbox = document.getElementById('minimalModeCheckbox');
     centerPalaceCheckbox = document.getElementById('centerPalaceCheckbox');
-    btnDefineBounds = document.getElementById('btnDefineBounds');
     rotationDisplay = document.getElementById('rotationDisplay');
     btnAdjustCenter = document.getElementById('btnAdjustCenter');
     btnResetFloorplan = document.getElementById('btnResetFloorplan');
