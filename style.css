@@ -2902,6 +2902,51 @@ select.input-field {
   border: 1px solid #cbd5e1;
 }
 
+/* Facing Status Banner */
+.tm-facing-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.facing-banner-vuong {
+  background: #ecfdf5;
+  border: 1.5px solid #a7f3d0;
+  color: #065f46;
+}
+
+.facing-banner-vuong strong {
+  color: #047857;
+}
+
+.facing-banner-suy {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  color: #92400e;
+}
+
+.facing-banner-suy strong {
+  color: #b45309;
+}
+
+.facing-banner-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.facing-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .tm-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -2999,6 +3044,36 @@ select.input-field {
   border: 1px solid #e2e8f0;
 }
 
+/* Priority Pills */
+.tm-priority-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+.priority-tro-vuong {
+  background: #fdf2f8;
+  color: #be185d;
+  border: 1px solid #fbcfe8;
+}
+
+.priority-cuu-canh {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  animation: pulseWarning 2s infinite ease-in-out;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
 .tm-calc-steps {
   display: flex;
   flex-direction: column;
@@ -3042,24 +3117,34 @@ select.input-field {
   line-height: 1.5;
 }
 
-.advice-dac {
-  background: #ecfdf5;
-  border-left: 4px solid #10b981;
-  color: #065f46;
+.advice-tro-vuong {
+  background: #fdf2f8;
+  border-left: 4px solid #db2777;
+  color: #831843;
 }
 
-.advice-dac strong {
-  color: #047857;
+.advice-tro-vuong strong {
+  color: #9d174d;
 }
 
-.advice-khong {
+.advice-cuu-canh {
   background: #fef2f2;
-  border-left: 4px solid #f87171;
+  border-left: 4px solid #ef4444;
   color: #991b1b;
 }
 
-.advice-khong strong {
+.advice-cuu-canh strong {
   color: #b91c1c;
+}
+
+.advice-khong {
+  background: #f8fafc;
+  border-left: 4px solid #cbd5e1;
+  color: #64748b;
+}
+
+.advice-khong strong {
+  color: #475569;
 }
 
 

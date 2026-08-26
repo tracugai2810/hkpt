@@ -2,6 +2,7 @@
  * ============================================================
  * Thành Môn Quyết (Castle Gate Theory) - Huyền Không Phi Tinh
  * Thuật toán chuẩn hóa 4 bước theo Thẩm Thị Huyền Không Học
+ * Tích hợp Hệ Thống Đánh Giá Cấp Độ Ứng Dụng (Cứu Giải vs Trợ Vượng)
  * ============================================================
  */
 
@@ -72,7 +73,7 @@
   /**
    * Tính toán Thành Môn cho một cung liền kề cụ thể
    */
-  function evaluateSide(facingPalace, adjPalace, sanYuan, vanTrach, chartResult, sidePosition) {
+  function evaluateSide(facingPalace, adjPalace, sanYuan, vanTrach, chartResult, sidePosition, isFacingMainVuong, facingHuongStar) {
     // 1. Phân loại Chính Mã vs Tá Mã
     const isChinhMa = isHaDoPair(facingPalace, adjPalace);
     const typeLabel = isChinhMa ? 'Thành Môn Chính (Chính Mã)' : 'Thành Môn Phụ (Tá Mã)';
@@ -117,6 +118,28 @@
     // Điều kiện: Sao kết quả == Vận Trạch VÀ Bay Nghịch
     const isDacThanhMon = (saoKetQua === vanTrach && direction === -1);
 
+    // 7. Xác định Cấp Độ Khuyến Cáo (Trợ Vượng vs Cứu Giải)
+    let priorityType = 'KHONG_DUNG';
+    let priorityBadge = '⛔ Không Đắc Khí';
+    let priorityClass = 'badge-khong-dung';
+    let advice = '';
+
+    if (isDacThanhMon) {
+      if (isFacingMainVuong) {
+        priorityType = 'TRO_VUONG';
+        priorityBadge = '🌸 Cẩm Thượng Thiêm Hoa (Trợ Vượng)';
+        priorityClass = 'badge-tro-vuong';
+        advice = `🌸 Cẩm Thượng Thiêm Hoa (Gấm Thêm Hoa): Hướng chính của nhà đã có Hướng tinh Sao ${facingHuongStar} là Vượng/Sinh khí (cửa chính đã rất đắc tài). Vị trí Thành Môn tại Cung ${PALACE_NAMES[adjPalace]} - Sơn ${candidateMountain.name} đóng vai trò đòn bẩy trợ lực tăng cường. Nếu có điều kiện mở thêm cửa phụ, cổng ngõ hoặc đặt phong thủy luân / thác nước động tại đây, gia trạch sẽ đạt thế 'Song Khí Tề Đáo', tài lộc đại phát vượt bậc. Nếu không mở cửa phụ thì cửa chính vẫn rất phát đạt, không hề phạm hung.`;
+      } else {
+        priorityType = 'CUU_CANH';
+        priorityBadge = '🚨 Dụng Thần Cứu Giải (Tối Quan Trọng)';
+        priorityClass = 'badge-cuu-canh';
+        advice = `🚨 Dụng Thần Cứu Giải (Cứu Cánh Tài Lộc): Vì hướng chính của ngôi nhà chỉ có Hướng tinh Sao ${facingHuongStar} (bị suy thoái / hưu tù), cửa chính không thể nạp vượng khí. Thành Môn tại Cung ${PALACE_NAMES[adjPalace]} - Sơn ${candidateMountain.name} chính là 'Cửa cứu cánh duy nhất'. Khuyến cáo gia chủ NÊN ƯU TIÊN mở cửa phụ, trổ cổng, mở ban công hoặc đặt bể cá, phong thủy luân lớn tại đây để đoạt lấy vượng khí đương thời (Sao ${vanTrach} bay nghịch), hóa giải suy bại và kích hoạt tài lộc cho toàn gia trạch!`;
+      }
+    } else {
+      advice = `Không đắc Thành Môn (Sao bay đến là Sao ${saoKetQua} ${direction === 1 ? 'bay Thuận' : 'bay Nghịch'}): Tuyệt đối không mở cửa phụ, cổng hoặc đặt hồ nước lớn tại đây kẻo nạp thoái khí, suy bại tài vận.`;
+    }
+
     return {
       sidePosition: sidePosition, // 'left' hoặc 'right'
       sideLabel: sidePosition === 'left' ? 'Bên Trái Hướng Nhà' : 'Bên Phải Hướng Nhà',
@@ -135,12 +158,13 @@
       gocDetail: gocDetail,
       saoKetQua: saoKetQua,
       isDacThanhMon: isDacThanhMon,
+      priorityType: priorityType,
+      priorityBadge: priorityBadge,
+      priorityClass: priorityClass,
       badgeText: isDacThanhMon ? `🚪 TM: ${candidateMountain.name}` : '',
-      statusText: isDacThanhMon ? 'Đắc Thành Môn Vượng Khí (Cực Cát - Dùng Được)' : 'Thành Môn Suy Tử Khí (Hung - Không Dùng)',
+      statusText: isDacThanhMon ? 'Đắc Thành Môn Vượng Khí (Dùng Được)' : 'Thành Môn Suy Tử Khí (Không Dùng)',
       statusClass: isDacThanhMon ? 'status-dac' : 'status-khong-dac',
-      advice: isDacThanhMon
-        ? `Đoạt đắc Vượng Khí (${typeLabel}): Sao Vượng Khí ${vanTrach} bay nghịch đáo cung ${candidateMountain.name}. Rất tốt để mở cửa phụ, trổ cổng ngõ, mở ban công, đặt ngã ba đường hoặc bố trí tiểu cảnh nước/phong thủy luân để kích tài vượng phát thần tốc!`
-        : `Không đắc Thành Môn (Sao bay đến là Sao ${saoKetQua} ${direction === 1 ? 'bay Thuận' : 'bay Nghịch'}): Tuyệt đối không mở cửa phụ, cổng hoặc đặt hồ nước lớn tại đây kẻo nạp thoái khí, suy bại tài vận.`
+      advice: advice
     };
   }
 
@@ -156,14 +180,21 @@
 
     if (!facingPalace || facingPalace === 5) return null;
 
+    // Kiểm tra Hướng tinh tại Cung Hướng chính
+    const facingData = chartResult.palaces[facingPalace];
+    const facingHuongStar = facingData ? facingData.huong : 0;
+    const vuongStar = vanTrach;
+    const sinhStar = wrapStar(vanTrach + 1);
+    const isFacingMainVuong = (facingHuongStar === vuongStar || facingHuongStar === sinhStar);
+
     const idx = RING_8.indexOf(facingPalace);
     if (idx === -1) return null;
 
     const leftPalace = RING_8[(idx - 1 + 8) % 8];
     const rightPalace = RING_8[(idx + 1) % 8];
 
-    const leftResult = evaluateSide(facingPalace, leftPalace, sanYuan, vanTrach, chartResult, 'left');
-    const rightResult = evaluateSide(facingPalace, rightPalace, sanYuan, vanTrach, chartResult, 'right');
+    const leftResult = evaluateSide(facingPalace, leftPalace, sanYuan, vanTrach, chartResult, 'left', isFacingMainVuong, facingHuongStar);
+    const rightResult = evaluateSide(facingPalace, rightPalace, sanYuan, vanTrach, chartResult, 'right', isFacingMainVuong, facingHuongStar);
 
     const dacThanhMonPalaces = [];
     const dacThanhMonDetails = {};
@@ -182,6 +213,9 @@
       vanTrach: vanTrach,
       facingMountain: chartResult.facingMountain,
       facingPalace: facingPalace,
+      facingPalaceName: PALACE_NAMES[facingPalace],
+      facingHuongStar: facingHuongStar,
+      isFacingMainVuong: isFacingMainVuong,
       sanYuan: sanYuan,
       hasAnyDacThanhMon: dacThanhMonPalaces.length > 0,
       dacThanhMonPalaces: dacThanhMonPalaces,
@@ -197,7 +231,7 @@
   function renderThanhMonHTML(tmAnalysis) {
     if (!tmAnalysis) return '';
 
-    const { vanTrach, facingMountain, hasAnyDacThanhMon, left, right } = tmAnalysis;
+    const { vanTrach, facingMountain, facingPalaceName, facingHuongStar, isFacingMainVuong, hasAnyDacThanhMon, left, right } = tmAnalysis;
 
     function renderSideCard(side) {
       if (!side) return '';
@@ -217,6 +251,12 @@
             <span class="tm-status-icon">${side.isDacThanhMon ? '🚪✨' : '🚫'}</span>
             <strong>${side.statusText}</strong>
           </div>
+
+          ${side.isDacThanhMon ? `
+            <div class="tm-priority-pill ${side.priorityClass}">
+              <span>${side.priorityBadge}</span>
+            </div>
+          ` : ''}
 
           <div class="tm-calc-steps">
             <div class="tm-calc-row">
@@ -241,8 +281,8 @@
             <small>🔍 ${side.gocDetail}</small>
           </div>
 
-          <div class="tm-advice-box ${side.isDacThanhMon ? 'advice-dac' : 'advice-khong'}">
-            <strong>${side.isDacThanhMon ? '💡 Gợi Ý Ứng Dụng:' : '⚠️ Cảnh Báo:'}</strong>
+          <div class="tm-advice-box ${side.isDacThanhMon ? (side.priorityType === 'CUU_CANH' ? 'advice-cuu-canh' : 'advice-tro-vuong') : 'advice-khong'}">
+            <strong>${side.isDacThanhMon ? (side.priorityType === 'CUU_CANH' ? '🚨 Đề Xuất Cứu Giải:' : '💡 Đề Xuất Trợ Vượng:') : '⚠️ Cảnh Báo:'}</strong>
             <p>${side.advice}</p>
           </div>
         </div>
@@ -266,6 +306,17 @@
               <span>Cả 2 bên không đắc Thành Môn</span>
             </div>
           `}
+        </div>
+
+        <!-- Facing Status Context Banner -->
+        <div class="tm-facing-banner ${isFacingMainVuong ? 'facing-banner-vuong' : 'facing-banner-suy'}">
+          <span class="facing-banner-icon">${isFacingMainVuong ? '🌟' : '⚠️'}</span>
+          <div class="facing-banner-content">
+            <strong>${isFacingMainVuong ? 'Chính Hướng Đã Đắc Vượng Khí (Cửa Chính Rất Tốt):' : 'Chính Hướng Bị Hưu Tù / Suy Thoái Khí (Cần Dụng Thần Cứu Giải):'}</strong>
+            <span>${isFacingMainVuong 
+              ? `Cung Hướng (${facingPalaceName}) có Hướng tinh Sao ${facingHuongStar} là Vượng/Sinh khí. Cửa chính đã nạp trọn tài khí. Mở thêm Thành Môn là giải pháp 'Gấm Thêm Hoa' nhân đôi tài lộc; nếu không mở cửa phụ thì cửa chính vẫn đại phát.` 
+              : `Cung Hướng (${facingPalaceName}) có Hướng tinh Sao ${facingHuongStar} là Suy/Thoái khí, cửa chính không đón được vượng tài. Cần ĐẶC BIỆT ƯU TIÊN mở cửa phụ / cổng / bể cá tại vị trí Thành Môn đắc khí để cứu giải tài vận.`}</span>
+          </div>
         </div>
 
         <div class="tm-cards-grid">

@@ -368,7 +368,8 @@
         const tmInfo = (tmAnalysis && tmAnalysis.dacThanhMonDetails) ? tmAnalysis.dacThanhMonDetails[palace] : null;
         let tmIconHTML = '';
         if (tmInfo) {
-          tmIconHTML = `<span class="tm-icon-inline" title="Đắc Thành Môn Vượng Khí: Cung ${tmInfo.palaceName} - Sơn ${tmInfo.mountainName} (${tmInfo.typeShort})">🚪</span>`;
+          const priorityText = tmInfo.priorityType === 'CUU_CANH' ? 'Dụng Thần Cứu Giải' : 'Cẩm Thượng Thiêm Hoa';
+          tmIconHTML = `<span class="tm-icon-inline" title="Đắc Thành Môn [${priorityText}]: Cung ${tmInfo.palaceName} - Sơn ${tmInfo.mountainName} (${tmInfo.typeShort})">🚪</span>`;
         }
 
         // Middle: Vận tinh + icon TM nhỏ đặt ngang cạnh số Vận
