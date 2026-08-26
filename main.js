@@ -336,6 +336,9 @@
       for (let i = 0; i < 8; i++) {
         displayGrid[visualIndices[i]] = rotatedRing[i];
       }
+
+      // Analyze Thanh Mon (Castle Gate)
+      const tmAnalysis = (window.ThanhMonRules && window.ThanhMonRules.analyze) ? window.ThanhMonRules.analyze(result) : null;
       
       for (let i = 0; i < 9; i++) {
         const palace = displayGrid[i];
@@ -378,6 +381,18 @@
         cell.appendChild(topDiv);
         cell.appendChild(midDiv);
         cell.appendChild(botDiv);
+
+        // Check & attach Thanh Mon badge if this palace has Dac Thanh Mon Vuong Khi
+        if (tmAnalysis && tmAnalysis.dacThanhMonDetails && tmAnalysis.dacThanhMonDetails[palace]) {
+          const tmInfo = tmAnalysis.dacThanhMonDetails[palace];
+          cell.classList.add('cell-has-thanh-mon');
+          const tmBadge = document.createElement('div');
+          tmBadge.className = 'cell-thanh-mon-badge';
+          tmBadge.title = `Đắc Thành Môn Vượng Khí: Cung ${tmInfo.palaceName} - Sơn ${tmInfo.mountainName} (${tmInfo.typeShort})`;
+          tmBadge.innerHTML = `<span class="tm-icon">🚪</span><span class="tm-text">TM: ${tmInfo.mountainName}</span>`;
+          cell.appendChild(tmBadge);
+        }
+
         chartGrid.appendChild(cell);
       }
     }
@@ -424,6 +439,22 @@
       }
     } catch (e) {
       console.error('LoanDauRules error:', e);
+    }
+
+    // Render Thanh Mon (Castle Gate) recommendation
+    try {
+      const thanhMonSection = document.getElementById('thanhMonSection');
+      if (thanhMonSection && window.ThanhMonRules) {
+        const tmAnalysis = window.ThanhMonRules.analyze(result);
+        if (tmAnalysis) {
+          thanhMonSection.innerHTML = window.ThanhMonRules.renderHTML(tmAnalysis);
+          thanhMonSection.classList.remove('hidden');
+        } else {
+          thanhMonSection.classList.add('hidden');
+        }
+      }
+    } catch (e) {
+      console.error('ThanhMonRules error:', e);
     }
 
     // Render Feng Shui interpretation if module available

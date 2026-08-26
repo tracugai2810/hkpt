@@ -194,6 +194,31 @@
   }
 
   /**
+   * Draws a green Door badge for Thanh Mon vượng khí on the compass ring.
+   */
+  function drawThanhMonBadge(ctx, cx, cy, radius, compassDeg, s, mtnName) {
+    const pos = getXY(cx, cy, radius, compassDeg);
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    const badgeW = 50 * s;
+    const badgeH = 19 * s;
+    ctx.fillStyle = '#059669';
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 1.2 * s;
+    ctx.beginPath();
+    drawRoundRect(ctx, -badgeW / 2, -badgeH / 2, badgeW, badgeH, 4 * s);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 ${Math.round(8.5 * s)}px "Inter", "Noto Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`🚪 TM: ${mtnName}`, 0, 0);
+    ctx.restore();
+  }
+
+  /**
    * Draws a star trio badge: [Sao Sơn (Xanh Dương)] [Sao Vận (Lớn)] [Sao Hướng (Đỏ)]
    * positioned directly in the given direction sector.
    */
@@ -264,6 +289,7 @@
     const showSectorStars = !!options.showSectorStars;
     const palaces = options.palaces || null;
     const isMinimal = !!options.minimalMode;
+    const thanhMon = options.thanhMon || null;
 
     // 1. Set canvas resolution to 1000x1000
     canvas.width = 1000;
@@ -445,6 +471,17 @@
         }
       }
 
+      // Render Thanh Mon door badges if active
+      if (thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.length > 0) {
+        thanhMon.dacThanhMonPalaces.forEach(p => {
+          const dirDeg = PALACE_TO_DIR_DEG[p];
+          const tmInfo = thanhMon.dacThanhMonDetails[p];
+          if (dirDeg !== null && tmInfo) {
+            drawThanhMonBadge(ctx, cx, cy, R_OUTER - 26 * s, dirDeg, s, tmInfo.mountainName);
+          }
+        });
+      }
+
       // Center red dot
       ctx.beginPath();
       ctx.arc(cx, cy, 4.5 * s, 0, 2 * Math.PI);
@@ -595,7 +632,18 @@
       }
     }
 
-    // 12. Restore context
+    // 12. Render Thanh Mon door badges if active
+    if (thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.length > 0) {
+      thanhMon.dacThanhMonPalaces.forEach(p => {
+        const dirDeg = PALACE_TO_DIR_DEG[p];
+        const tmInfo = thanhMon.dacThanhMonDetails[p];
+        if (dirDeg !== null && tmInfo) {
+          drawThanhMonBadge(ctx, cx, cy, R_OUTER - 26 * s, dirDeg, s, tmInfo.mountainName);
+        }
+      });
+    }
+
+    // 13. Restore context
     ctx.restore();
   }
 

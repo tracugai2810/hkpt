@@ -634,6 +634,7 @@
     let facingDegree = 0;
     let facingPalace = 180;
     let palaces = null;
+    let thanhMon = null;
     
     if (result) {
       facingDegree = result.facingDegree || 0;
@@ -641,13 +642,17 @@
         facingPalace = result.facingMountain.palace;
       }
       palaces = result.palaces || null;
+      if (window.ThanhMonRules && window.ThanhMonRules.analyze) {
+        thanhMon = window.ThanhMonRules.analyze(result);
+      }
     }
     
     window.Compass.render(floorplanCompass, facingDegree, facingPalace, {
       showGuideLines: showGuideLines,
       showSectorStars: true,
       palaces: palaces,
-      minimalMode: isMinimalMode
+      minimalMode: isMinimalMode,
+      thanhMon: thanhMon
     });
   }
 
@@ -1123,12 +1128,16 @@
       let facingDegree = 0;
       let facingPalace = 180;
       let palaces = null;
+      let thanhMon = null;
       if (result) {
         facingDegree = result.facingDegree || 0;
         if (result.facingMountain && result.facingMountain.palace) {
           facingPalace = result.facingMountain.palace;
         }
         palaces = result.palaces || null;
+        if (window.ThanhMonRules && window.ThanhMonRules.analyze) {
+          thanhMon = window.ThanhMonRules.analyze(result);
+        }
       }
 
       if (window.Compass && window.Compass.render) {
@@ -1136,7 +1145,8 @@
           showGuideLines: showGuideLines,
           showSectorStars: true,
           palaces: palaces,
-          minimalMode: isMinimalMode
+          minimalMode: isMinimalMode,
+          thanhMon: thanhMon
         });
       }
 
