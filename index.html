@@ -31,12 +31,9 @@
           </div>
           <div class="input-grid grid-house">
             <div class="input-group">
-              <div class="input-label-row">
-                <label for="inputDegree">Số Độ Hướng (°)</label>
-                <button type="button" id="btnOpenSatellite" class="btn-sat-trigger" title="Đo hướng nhà từ vệ tinh Google / ESRI">🛰️ Đo Vệ Tinh</button>
-              </div>
+              <label for="inputDegree">Số Độ Hướng (°)</label>
               <input type="text" id="inputDegree" value="189" placeholder="0 - 360" class="input-field" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
-              <span class="input-hint">VD: 180.5 (hoặc bấm Đo Vệ Tinh)</span>
+              <span class="input-hint">VD: 180.5</span>
             </div>
             <div class="input-group">
               <label for="inputYear">Năm Nhập Trạch</label>
@@ -48,6 +45,12 @@
               <input type="text" id="inputVan" value="8" readonly class="input-field input-readonly">
               <span class="input-hint">Tự động tính</span>
             </div>
+          </div>
+          <div class="sat-trigger-wrapper">
+            <button type="button" id="btnOpenSatellite" class="btn-sat-standalone" title="Đo hướng nhà chuẩn từng 0.1° từ ảnh vệ tinh Google Maps">
+              <span class="btn-sat-icon">🛰️</span>
+              <span>Đo Hướng Nhà Từ Ảnh Vệ Tinh</span>
+            </button>
           </div>
         </div>
 

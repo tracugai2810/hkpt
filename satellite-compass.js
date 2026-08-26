@@ -429,6 +429,48 @@
     }
   }
 
+  let userLocationMarker = null;
+  let userLocationCircle = null;
+
+  function showUserLocationOnMap(lat, lng, accuracy) {
+    if (!map) return;
+
+    if (userLocationMarker) {
+      map.removeLayer(userLocationMarker);
+      userLocationMarker = null;
+    }
+    if (userLocationCircle) {
+      map.removeLayer(userLocationCircle);
+      userLocationCircle = null;
+    }
+
+    // Blue pulsing GPS dot
+    const gpsIcon = L.divIcon({
+      className: 'sat-gps-dot-container',
+      html: '<div class="sat-gps-pulse"></div><div class="sat-gps-dot"></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+
+    userLocationMarker = L.marker([lat, lng], {
+      icon: gpsIcon,
+      interactive: false,
+      zIndexOffset: 1000
+    }).addTo(map);
+
+    // Soft accuracy circle
+    if (accuracy && accuracy > 0 && accuracy < 200) {
+      userLocationCircle = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#2563eb',
+        weight: 1.5,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.12,
+        interactive: false
+      }).addTo(map);
+    }
+  }
+
   /**
    * GPS Current Location
    */
@@ -450,8 +492,12 @@
           btn.innerText = '📍 Vị Trí Của Tôi';
           btn.disabled = false;
         }
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
         if (map) {
-          map.setView([pos.coords.latitude, pos.coords.longitude], 19, { animate: true });
+          map.setView([lat, lng], 19, { animate: true });
+          showUserLocationOnMap(lat, lng, acc);
         }
       },
       err => {
