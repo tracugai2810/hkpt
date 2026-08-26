@@ -31,18 +31,18 @@
           <div class="input-grid grid-house">
             <div class="input-group">
               <label for="inputDegree">Số Độ Hướng (°)</label>
-              <input type="text" id="inputDegree" value="189" placeholder="0 - 360" class="input-field" inputmode="decimal">
+              <input type="text" id="inputDegree" value="189" placeholder="0 - 360" class="input-field" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
               <span class="input-hint">VD: 180.5</span>
             </div>
             <div class="input-group">
               <label for="inputYear">Năm Nhập Trạch</label>
-              <input type="number" id="inputYear" min="1864" max="2103" value="2010" class="input-field">
+              <input type="text" id="inputYear" value="2010" placeholder="Năm nhập trạch" class="input-field" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
               <span class="input-hint">Năm xây / vào ở</span>
             </div>
             <div class="input-group group-van">
               <label for="inputVan">Vận</label>
               <div class="van-display-wrap">
-                <input type="number" id="inputVan" min="1" max="9" value="8" readonly class="input-field input-readonly">
+                <input type="text" id="inputVan" value="8" readonly class="input-field input-readonly">
                 <span class="van-badge" id="vanBadge">Vận 8</span>
               </div>
               <span class="input-hint">Tự động tính</span>
@@ -59,7 +59,7 @@
           <div class="input-grid grid-owner">
             <div class="input-group">
               <label for="inputOwnerYear">Năm Sinh Gia Chủ</label>
-              <input type="number" id="inputOwnerYear" min="1900" max="2200" class="input-field" placeholder="VD: 1985">
+              <input type="text" id="inputOwnerYear" class="input-field" placeholder="VD: 1985" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             </div>
             <div class="input-group">
               <label for="inputOwnerGender">Giới Tính</label>
@@ -73,26 +73,29 @@
 
         <!-- Section 3: Thời Điểm Xem (Dương Lịch) -->
         <div class="form-block">
-          <div class="form-block-title">
-            <span class="block-num">3</span>
-            <span>Thời Điểm Khảo Sát (Dương Lịch)</span>
+          <div class="form-block-title" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="block-num">3</span>
+              <span>Thời Điểm Khảo Sát (Dương Lịch)</span>
+            </div>
+            <button type="button" id="btnSyncCurrentTime" class="fp-mini-btn" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;" title="Cập nhật thời gian hiện tại">🕒 Hiện Tại</button>
           </div>
           <div class="input-grid grid-datetime">
             <div class="input-group">
               <label for="inputCurrentYear">Năm</label>
-              <input type="number" id="inputCurrentYear" min="1900" max="2200" value="2026" class="input-field">
+              <input type="text" id="inputCurrentYear" value="2026" class="input-field" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             </div>
             <div class="input-group">
               <label for="inputCurrentMonth">Tháng</label>
               <select id="inputCurrentMonth" class="input-field">
                 <option value="1">Tháng 1</option>
-                <option value="2" selected>Tháng 2</option>
+                <option value="2">Tháng 2</option>
                 <option value="3">Tháng 3</option>
                 <option value="4">Tháng 4</option>
                 <option value="5">Tháng 5</option>
                 <option value="6">Tháng 6</option>
                 <option value="7">Tháng 7</option>
-                <option value="8">Tháng 8</option>
+                <option value="8" selected>Tháng 8</option>
                 <option value="9">Tháng 9</option>
                 <option value="10">Tháng 10</option>
                 <option value="11">Tháng 11</option>
@@ -101,7 +104,7 @@
             </div>
             <div class="input-group">
               <label for="inputCurrentDay">Ngày</label>
-              <input type="number" id="inputCurrentDay" min="1" max="31" value="1" class="input-field">
+              <input type="text" id="inputCurrentDay" value="26" class="input-field" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             </div>
             <div class="input-group">
               <label for="inputCurrentHour">Giờ Xem</label>
@@ -111,7 +114,7 @@
                 <option value="3">Dần (3:00 - 4:59)</option>
                 <option value="4">Mão (5:00 - 6:59)</option>
                 <option value="5">Thìn (7:00 - 8:59)</option>
-                <option value="6">Tỵ (9:00 - 10:59)</option>
+                <option value="6" selected>Tỵ (9:00 - 10:59)</option>
                 <option value="7">Ngọ (11:00 - 12:59)</option>
                 <option value="8">Mùi (13:00 - 14:59)</option>
                 <option value="9">Thân (15:00 - 16:59)</option>

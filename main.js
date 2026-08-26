@@ -43,15 +43,14 @@
   
   let currentResult = null; // Store result for copy functionality
 
-  // Initialize
-  function init() {
-    // Set current year/month/day/hour defaults
+  // Set current real-time survey date & hour
+  function setCurrentTime() {
     const now = new Date();
-    inputCurrentYear.value = now.getFullYear();
-    inputCurrentMonth.value = now.getMonth() + 1;
+    if (inputCurrentYear) inputCurrentYear.value = now.getFullYear();
+    if (inputCurrentMonth) inputCurrentMonth.value = now.getMonth() + 1;
     if (inputCurrentDay) inputCurrentDay.value = now.getDate();
     
-    // Calculate hour index: Tý=1, Sửu=2...
+    // Calculate 12 Can Chi hours: Tý=1, Sửu=2...
     const h = now.getHours();
     let hourIdx = 1;
     if (h >= 23 || h < 1) hourIdx = 1;
@@ -67,6 +66,12 @@
     else if (h >= 19 && h < 21) hourIdx = 11;
     else if (h >= 21 && h < 23) hourIdx = 12;
     if (inputCurrentHour) inputCurrentHour.value = hourIdx;
+  }
+
+  // Initialize
+  function init() {
+    // Set real-time survey date/time automatically
+    setCurrentTime();
     
     // Auto-calculate Van when year changes
     inputYear.addEventListener('input', updateVan);
@@ -77,12 +82,23 @@
     });
     
     // Calculate button
-    btnCalculate.addEventListener('click', calculate);
+    btnCalculate.addEventListener('click', function() {
+      calculate(true);
+    });
+    
+    // Real-time sync button
+    const btnSyncCurrentTime = document.getElementById('btnSyncCurrentTime');
+    if (btnSyncCurrentTime) {
+      btnSyncCurrentTime.addEventListener('click', function() {
+        setCurrentTime();
+        calculate(false);
+      });
+    }
     
     // Also calc on Enter key
     document.querySelectorAll('.input-field').forEach(el => {
       el.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') calculate();
+        if (e.key === 'Enter') calculate(true);
       });
     });
     
@@ -98,8 +114,8 @@
     // Initial Van calculation
     updateVan();
     
-    // Only calculate when user clicks 'Lập Tinh Bàn' button
-    // calculate();
+    // Calculate initial chart immediately
+    calculate(false);
     
     // Initialize FloorPlan module
     if (window.FloorPlan) {
@@ -108,7 +124,7 @@
   }
 
   function updateVan() {
-    const year = parseInt(inputYear.value);
+    const year = parseInt(inputYear.value, 10);
     if (year && year >= 1864) {
       const van = FlyingStar.getVan(year);
       inputVan.value = van;
@@ -119,17 +135,17 @@
     }
   }
 
-  function calculate() {
+  function calculate(shouldScroll) {
     // Parse inputs
-    let degreeStr = inputDegree.value.replace(',', '.');
+    let degreeStr = (inputDegree.value || '').replace(',', '.').trim();
     const degree = parseFloat(degreeStr);
-    const year = parseInt(inputYear.value);
-    const currentYear = parseInt(inputCurrentYear.value);
-    const currentMonth = parseInt(inputCurrentMonth.value);
-    const currentDay = parseInt(inputCurrentDay.value);
-    const currentHour = parseInt(inputCurrentHour.value);
-    const ownerYear = parseInt(inputOwnerYear ? inputOwnerYear.value : '');
-    const ownerGender = parseInt(inputOwnerGender ? inputOwnerGender.value : '1');
+    const year = parseInt(inputYear.value, 10);
+    const currentYear = parseInt(inputCurrentYear.value, 10);
+    const currentMonth = parseInt(inputCurrentMonth.value, 10);
+    const currentDay = parseInt(inputCurrentDay.value, 10);
+    const currentHour = parseInt(inputCurrentHour.value, 10);
+    const ownerYear = parseInt(inputOwnerYear ? inputOwnerYear.value : '', 10);
+    const ownerGender = parseInt(inputOwnerGender ? inputOwnerGender.value : '1', 10);
     
     if (isNaN(degree) || degree < 0 || degree >= 360) {
       alert('Vui lòng nhập số độ hướng hợp lệ (0 - 359.9)');
@@ -155,6 +171,12 @@
     
     // Display
     renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai);
+
+    if (shouldScroll && exportArea) {
+      setTimeout(() => {
+        exportArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
   }
 
   function renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai) {
