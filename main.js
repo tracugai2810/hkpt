@@ -140,7 +140,7 @@
     
     // Download button event
     if (btnDownload) {
-      btnDownload.addEventListener('click', downloadChart);
+      btnDownload.addEventListener('click', handleDownloadButtonClick);
     }
     
     if (btnCopyText) {
@@ -243,98 +243,109 @@
   }
 
   function renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai) {
+    if (!result) return;
     if (imageResultContainer) imageResultContainer.classList.add('hidden');
     
     // Display exportArea directly on screen
-    exportArea.classList.remove('hidden');
-    exportArea.classList.remove('export-mode');
-    exportArea.style.position = '';
-    exportArea.style.left = '';
-    exportArea.style.top = '';
+    if (exportArea) {
+      exportArea.classList.remove('hidden');
+      exportArea.classList.remove('export-mode');
+      exportArea.style.position = '';
+      exportArea.style.left = '';
+      exportArea.style.top = '';
+    }
     
     if (actionContainer) actionContainer.classList.remove('hidden');
     
     // Warning
-    if (result.chartType === 'KHONG_VONG') {
-      warningBox.classList.remove('hidden');
-    } else {
-      warningBox.classList.add('hidden');
-    }
-    
-    // Owner info
-    if (menhQuai && ownerInfo) {
-      ownerInfo.innerHTML = `Gia chủ: ${menhQuai.genderName} ${menhQuai.year} - Mệnh quái: ${menhQuai.number} - ${menhQuai.element}`;
-      ownerInfo.classList.remove('hidden');
-    } else if (ownerInfo) {
-      ownerInfo.classList.add('hidden');
-      ownerInfo.innerHTML = '';
-    }
-    
-    // Chart info
-    let infoHTML = '';
-    const toaName = result.sittingMountain.name;
-    const huongName = result.facingMountain.name;
-    
-    infoHTML += `<div>Tọa <strong>${toaName}</strong> - Hướng <strong>${huongName}</strong>`;
-    
-    if (result.chartType === 'THE_QUAI' && result.kiemInfo) {
-      infoHTML += ` - <strong>${result.kiemInfo.label}</strong>`;
-    }
-    
-    // Badge
-    let badgeClass, badgeText;
-    if (result.chartType === 'HA_QUAI') {
-      badgeClass = 'badge-ha-quai';
-      badgeText = 'Hạ Quái';
-    } else if (result.chartType === 'THE_QUAI') {
-      badgeClass = 'badge-the-quai';
-      badgeText = 'Thế Quái';
-    } else {
-      badgeClass = 'badge-khong-vong';
-      badgeText = 'Không Vong';
-    }
-    
-    infoHTML += ` <span class="chart-type-badge ${badgeClass}">${badgeText}</span>`;
-    infoHTML += `</div>`;
-    
-    document.getElementById('infoMain').innerHTML = infoHTML;
-    
-    // Render Grid
-    chartContainer.classList.remove('hidden');
-    chartGrid.innerHTML = '';
-    
-    const directionShort = {
-      1: 'B', 2: 'TN', 3: 'Đ', 4: 'ĐN', 5: '', 6: 'TB', 7: 'T', 8: 'ĐB', 9: 'N'
-    };
-    
-    // Rotate Grid Algorithm
-    // Standard ring starting from South (Top-Center) clockwise
-    const ring = [9, 2, 7, 6, 1, 8, 3, 4];
-    const visualIndices = [1, 2, 5, 8, 7, 6, 3, 0];
-    const facingPalace = result.facingMountain.palace;
-    
-    let rotatedRing = ring;
-    if (facingPalace && facingPalace !== 5) {
-      const idx = ring.indexOf(facingPalace);
-      if (idx !== -1) {
-        rotatedRing = ring.slice(idx).concat(ring.slice(0, idx));
+    if (warningBox) {
+      if (result.chartType === 'KHONG_VONG') {
+        warningBox.classList.remove('hidden');
+      } else {
+        warningBox.classList.add('hidden');
       }
     }
     
-    const displayGrid = new Array(9);
-    displayGrid[4] = 5; // Center
-    for (let i = 0; i < 8; i++) {
-      displayGrid[visualIndices[i]] = rotatedRing[i];
+    // Owner info
+    if (ownerInfo) {
+      if (menhQuai) {
+        ownerInfo.innerHTML = `Gia chủ: ${menhQuai.genderName} ${menhQuai.year} - Mệnh quái: ${menhQuai.number} - ${menhQuai.element}`;
+        ownerInfo.classList.remove('hidden');
+      } else {
+        ownerInfo.classList.add('hidden');
+        ownerInfo.innerHTML = '';
+      }
     }
     
-    for (let i = 0; i < 9; i++) {
-      const palace = displayGrid[i];
-      const data = result.palaces[palace];
-        
-      const cell = document.createElement('div');
-      cell.className = 'chart-cell';
-      if (i === 4) cell.classList.add('center-cell');
-        
+    // Chart info
+    const infoMain = document.getElementById('infoMain');
+    if (infoMain) {
+      let infoHTML = '';
+      const toaName = result.sittingMountain.name;
+      const huongName = result.facingMountain.name;
+      
+      infoHTML += `<div>Tọa <strong>${toaName}</strong> - Hướng <strong>${huongName}</strong>`;
+      
+      if (result.chartType === 'THE_QUAI' && result.kiemInfo) {
+        infoHTML += ` - <strong>${result.kiemInfo.label}</strong>`;
+      }
+      
+      // Badge
+      let badgeClass, badgeText;
+      if (result.chartType === 'HA_QUAI') {
+        badgeClass = 'badge-ha-quai';
+        badgeText = 'Hạ Quái';
+      } else if (result.chartType === 'THE_QUAI') {
+        badgeClass = 'badge-the-quai';
+        badgeText = 'Thế Quái';
+      } else {
+        badgeClass = 'badge-khong-vong';
+        badgeText = 'Không Vong';
+      }
+      
+      infoHTML += ` <span class="chart-type-badge ${badgeClass}">${badgeText}</span>`;
+      infoHTML += `</div>`;
+      
+      infoMain.innerHTML = infoHTML;
+    }
+    
+    // Render Grid
+    if (chartContainer) chartContainer.classList.remove('hidden');
+    if (chartGrid) {
+      chartGrid.innerHTML = '';
+      
+      const directionShort = {
+        1: 'B', 2: 'TN', 3: 'Đ', 4: 'ĐN', 5: '', 6: 'TB', 7: 'T', 8: 'ĐB', 9: 'N'
+      };
+      
+      // Standard ring starting from South (Top-Center) clockwise
+      const ring = [9, 2, 7, 6, 1, 8, 3, 4];
+      const visualIndices = [1, 2, 5, 8, 7, 6, 3, 0];
+      const facingPalace = result.facingMountain.palace;
+      
+      let rotatedRing = ring;
+      if (facingPalace && facingPalace !== 5) {
+        const idx = ring.indexOf(facingPalace);
+        if (idx !== -1) {
+          rotatedRing = ring.slice(idx).concat(ring.slice(0, idx));
+        }
+      }
+      
+      const displayGrid = new Array(9);
+      displayGrid[4] = 5; // Center
+      for (let i = 0; i < 8; i++) {
+        displayGrid[visualIndices[i]] = rotatedRing[i];
+      }
+      
+      for (let i = 0; i < 9; i++) {
+        const palace = displayGrid[i];
+        const data = result.palaces[palace];
+        if (!data) continue;
+          
+        const cell = document.createElement('div');
+        cell.className = 'chart-cell';
+        if (i === 4) cell.classList.add('center-cell');
+          
         // Direction label inside cell (bottom-left area)
         const dirHTML = directionShort[palace] ? `<div class="dir-label-cell">${directionShort[palace]}</div>` : '';
         
@@ -368,6 +379,7 @@
         cell.appendChild(midDiv);
         cell.appendChild(botDiv);
         chartGrid.appendChild(cell);
+      }
     }
     
     // Update floorplan overlay if active
@@ -429,20 +441,22 @@
       console.error('FengShuiRules error:', e);
     }
 
-    // Automatically update image snapshot for right-click copy & save
+    // Automatically update image snapshot for right-click copy & instant share sheet
     updateImageSnapshot();
   }
 
+  let cachedChartFile = null;
+  let cachedChartBlob = null;
   let snapshotTimer = null;
+
   function updateImageSnapshot() {
     clearTimeout(snapshotTimer);
     snapshotTimer = setTimeout(() => {
       const exportAreaEl = document.getElementById('exportArea');
       const imgOverlay = document.getElementById('exportAreaImgOverlay');
-      if (!exportAreaEl || !imgOverlay || typeof html2canvas === 'undefined') return;
+      if (!exportAreaEl || typeof html2canvas === 'undefined') return;
 
-      // Hide overlay briefly during capture
-      imgOverlay.style.display = 'none';
+      if (imgOverlay) imgOverlay.style.display = 'none';
 
       html2canvas(exportAreaEl, {
         scale: 2.5,
@@ -451,12 +465,48 @@
         backgroundColor: '#ffffff'
       }).then(canvas => {
         const dataUrl = canvas.toDataURL('image/png');
-        imgOverlay.src = dataUrl;
-        imgOverlay.style.display = 'block';
+        if (imgOverlay) {
+          imgOverlay.src = dataUrl;
+          imgOverlay.style.display = 'block';
+        }
+        canvas.toBlob(blob => {
+          if (blob) {
+            cachedChartBlob = blob;
+            const van = (document.getElementById('inputVan') && document.getElementById('inputVan').value) || '8';
+            const deg = (document.getElementById('inputDegree') && document.getElementById('inputDegree').value) || '180';
+            const filename = `tinhban_van${van}_${deg}deg.png`;
+            try {
+              cachedChartFile = new File([blob], filename, { type: 'image/png', lastModified: Date.now() });
+            } catch(e) {
+              console.warn('File constructor fallback:', e);
+            }
+          }
+        }, 'image/png');
       }).catch(err => {
         console.warn('Image snapshot generation error:', err);
       });
     }, 80);
+  }
+
+  async function handleDownloadButtonClick(e) {
+    if (e) e.preventDefault();
+
+    // 1. If cached file is ready on mobile / iOS, IMMEDIATELY trigger native Web Share Sheet!
+    if (cachedChartFile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [cachedChartFile] }) && navigator.share) {
+      try {
+        await navigator.share({
+          files: [cachedChartFile],
+          title: 'Tinh Bàn Phong Thủy'
+        });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User closed share sheet
+        console.warn('Share sheet was dismissed or failed, downloading directly...', err);
+      }
+    }
+
+    // 2. Otherwise generate snapshot and trigger direct download
+    downloadChart();
   }
 
   function dataURItoBlob(dataURI) {
