@@ -352,7 +352,15 @@
       // Outer boundary dashed circle
       drawCircle(ctx, cx, cy, R_OUTER, 'rgba(15, 23, 42, 0.4)', 1.5 * s, [8 * s, 6 * s]);
 
-      // 8 Palaces partition rays from center (0) out to R_OUTER in clean solid dark lines
+      // 1. Draw 16 mountain subdivision rays (chia 3 sơn trong 1 hướng) with dashed lines
+      for (let k = 0; k < 24; k++) {
+        // Skip the 8 main boundary angles which are drawn as solid lines (k = 1, 4, 7, 10, 13, 16, 19, 22)
+        if (k % 3 === 1) continue;
+        const mountainBoundDeg = k * 15 + 7.5;
+        drawRadialLine(ctx, cx, cy, 0, R_OUTER, mountainBoundDeg, 'rgba(15, 23, 42, 0.45)', 1.2 * s, [6 * s, 6 * s]);
+      }
+
+      // 2. Draw 8 main Palaces partition rays (chia 8 hướng 45°) in clean solid dark lines
       for (let i = 0; i < 8; i++) {
         const boundDeg = i * 45 + 22.5;
         drawRadialLine(ctx, cx, cy, 0, R_OUTER, boundDeg, '#0f172a', 2.0 * s);
