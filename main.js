@@ -429,6 +429,35 @@
     } catch (e) {
       console.error('FengShuiRules error:', e);
     }
+
+    // Automatically update image snapshot for right-click copy & save
+    updateImageSnapshot();
+  }
+
+  let snapshotTimer = null;
+  function updateImageSnapshot() {
+    clearTimeout(snapshotTimer);
+    snapshotTimer = setTimeout(() => {
+      const exportAreaEl = document.getElementById('exportArea');
+      const imgOverlay = document.getElementById('exportAreaImgOverlay');
+      if (!exportAreaEl || !imgOverlay || typeof html2canvas === 'undefined') return;
+
+      // Hide overlay briefly during capture
+      imgOverlay.style.display = 'none';
+
+      html2canvas(exportAreaEl, {
+        scale: 2.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        const dataUrl = canvas.toDataURL('image/png');
+        imgOverlay.src = dataUrl;
+        imgOverlay.style.display = 'block';
+      }).catch(err => {
+        console.warn('Image snapshot generation error:', err);
+      });
+    }, 80);
   }
 
   function dataURItoBlob(dataURI) {
