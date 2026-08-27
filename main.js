@@ -266,7 +266,7 @@
         warningBox.innerHTML = `
           <div class="warning-title">🚨 CẢNH BÁO ĐẠI HÙNG SÁT: ${kvLabel.toUpperCase()}</div>
           <div class="warning-desc">${kvDesc}</div>
-          <div class="warning-advice">💡 <strong>Lời khuyên hóa giải thực tế:</strong> Tuyến Không Vong là ranh giới giao thoa khí trường hỗn loạn. Gia chủ nên <strong>xoay lệch khuôn cửa chính / hướng cửa đi $2^\circ$ đến $3^\circ$</strong> (về phía Chính Sơn thuần khí) để triệt để thoát khỏi đường ranh giới Không Vong trước khi bài trí nội thất.</div>
+          <div class="warning-advice">💡 <strong>Lời khuyên hóa giải thực tế:</strong> Tuyến Không Vong là ranh giới giao thoa khí trường hỗn loạn. Gia chủ nên <strong>xoay lệch khuôn cửa chính / hướng cửa đi 2° đến 3°</strong> (về phía Chính Sơn thuần khí) để triệt để thoát khỏi đường ranh giới Không Vong trước khi bài trí nội thất.</div>
         `;
         warningBox.classList.remove('hidden');
       } else {

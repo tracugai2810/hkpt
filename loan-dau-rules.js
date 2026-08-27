@@ -110,6 +110,19 @@
         score = 60;
       }
 
+      // Kiểm tra Thất Tinh Đả Kiếp
+      const isDaKiep = chartResult.thatTinhDaKiep && chartResult.thatTinhDaKiep.hasThatTinhDaKiep &&
+        chartResult.thatTinhDaKiep.linkedPalaces && chartResult.thatTinhDaKiep.linkedPalaces.some(lp => lp.palace === p);
+      if (isDaKiep) {
+        explanation += ` <span class="rule-good-inline">⭐ Cung thuộc Tam Giác Khí Thất Tinh Đả Kiếp: Ngoại cục cần thoáng đãng, có đường đi hoặc minh đường lưu thông để mượn vượng khí 3 nguyên!</span>`;
+      }
+
+      // Kiểm tra Lệnh Tinh Nhập Tù tại cung Hướng
+      const isFacing = (chartResult.facingMountain && chartResult.facingMountain.palace === p);
+      if (isFacing && chartResult.isHuongTinhNhapTu) {
+        explanation += ` <span class="rule-warn-inline">💡 Đầu hướng cần đặc biệt có Thủy (Minh đường rộng, hồ nước, giao lộ lớn) để thực hiện "Giải Tù Quyết" giải cứu vượng khí.</span>`;
+      }
+
       palaceDirections.push({
         palace: p, name, dir, son, huong, van,
         requirementType, reqBadge, priorityText,

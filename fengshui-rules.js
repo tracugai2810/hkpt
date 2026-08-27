@@ -89,6 +89,26 @@
       const dir = pal.palaceDirection;
       const isCenter = (p === 5);
 
+      // --- CÁC ĐẶC TÍNH NÂNG CAO CỦA CUNG p ---
+      const isSonPhuc = (son === p);
+      const isSonPhan = (son + p === 10);
+      const isSonPhanPhuc = (isSonPhuc || isSonPhan);
+      const isSonPhanPhucVuong = (isSonPhanPhuc && son === saoVuongKhi);
+
+      const isHuongPhuc = (huong === p);
+      const isHuongPhan = (huong + p === 10);
+      const isHuongPhanPhuc = (isHuongPhuc || isHuongPhan);
+      const isHuongPhanPhucVuong = (isHuongPhanPhuc && huong === saoVuongKhi);
+
+      const isDaKiepPalace = thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep &&
+        thatTinhDaKiep.linkedPalaces && thatTinhDaKiep.linkedPalaces.some(lp => lp.palace === p);
+
+      const hasToanBanHopThap = hopThap && hopThap.hasHopThap;
+      const isSonHuongHT = hopThap && hopThap.isSonHuongHopThap;
+      const isSonVanHT = hopThap && hopThap.isSonVanHopThap;
+      const isHuongVanHT = hopThap && hopThap.isHuongVanHopThap;
+      const isFacingPalace = (chartResult.facingMountain && chartResult.facingMountain.palace === p);
+
       // --- 1. CỬA CHÍNH (ĐẠI MÔN / KHÍ KHẨU CHÍNH) ---
       if (!isCenter) {
         let doorRating = 'Bình';
@@ -122,9 +142,48 @@
           doorDesc = `Hướng tinh (${huong}) đã suy thoái khí. Nạp khí bình thường, cần giữ cửa luôn sáng sủa, thông thoáng.`;
         }
 
+        // Tác động Phản / Phục Ngâm Hướng
+        if (isHuongPhanPhuc) {
+          if (isHuongPhanPhucVuong) {
+            doorDesc += ` <span class="rule-good-inline">🌟 Hướng tinh đắc Vượng Khí Vận ${vanTrach} (${isHuongPhan ? 'Phản' : 'Phục'} Ngâm đắc cách): Nếu trước mặt có Minh Đường rộng thoáng, hồ nước hoặc ngã ba ngã tư sẽ cát hóa hung, đại phát tài lộc.</span>`;
+            doorBadges.unshift({ text: 'Vượng Tinh Đắc Cách', type: 'success' });
+          } else {
+            doorScore -= 40;
+            doorRating = (doorScore <= 20) ? `Đại Kỵ (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)` : `Cần Hóa Giải (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)`;
+            doorDesc += ` <span class="rule-warn-inline">⚠️ Hướng Tinh (${huong}) phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm: Khí khẩu nạp tài đối xung với Địa bàn Lạc Thư, dễ hao tổn tiền của, kinh doanh bế tắc. Bắt buộc đặt vật phẩm Ngũ Hành thông quan để hóa giải.</span>`;
+            doorBadges.unshift({ text: `Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'danger' });
+          }
+        }
+
+        // Tác động Thất Tinh Đả Kiếp
+        if (isDaKiepPalace) {
+          doorScore = Math.max(doorScore, 98);
+          doorRating = 'Đại Cát (Khí Khẩu Đả Kiếp)';
+          doorDesc = `⭐ <strong>Cung Khí Khẩu Đả Kiếp (${thatTinhDaKiep.label}):</strong> ` + doorDesc + ` Rất tốt để mở đại môn nạp khí thiên cơ của tương lai!`;
+          doorBadges.unshift({ text: 'Khí Khẩu Đả Kiếp', type: 'success' });
+        }
+
+        // Tác động Hợp Thập
+        if (isHuongVanHT || isSonHuongHT) {
+          doorDesc += ` <span class="rule-good-inline">✨ Đắc Toàn Bàn Hợp Thập cứu giải thông khí thiên địa.</span>`;
+          if (doorScore < 70) {
+            doorScore += 15;
+            if (doorRating === 'Bình') doorRating = 'Cát (Được Hợp Thập Cứu)';
+          }
+        }
+
         if (isKiem) {
           doorDesc += ` <span class="rule-warn-inline">⚠️ Nhà kiêm hướng: Cửa chính dễ bị tạp khí, cần an vị cửa chuẩn độ số chính hướng.</span>`;
-          doorScore -= 20;
+          doorScore -= 15;
+        }
+
+        if (isFacingPalace && isKhongVong && khongVongInfo) {
+          doorDesc += ` <span class="rule-warn-inline">🚨 Hướng cửa đè tuyến ${khongVongInfo.label}: Bắt buộc xoay lệch khuôn cửa 2° - 3° về phía Chính Sơn thuần khí để tránh đại hung.</span>`;
+          doorBadges.unshift({ text: `Phạm ${khongVongInfo.label}`, type: 'danger' });
+        }
+
+        if (isFacingPalace && isHuongTinhNhapTu) {
+          doorDesc += ` <span class="rule-warn-inline">💡 Trạch bàn bị Tài Tù trong Vận ${vanTrach}: Trước cửa chính cần có Minh Đường rộng, tụ thủy để "Hướng thượng hữu thủy, tù bất trụ" giải phóng tài lộc.</span>`;
         }
 
         analysis.doors.push({
@@ -173,6 +232,27 @@
           lrDesc = `Hướng tinh (${huong}) thoái khí. Bố trí phòng khách cần tăng cường ánh sáng tự nhiên và cây xanh hợp mệnh.`;
         }
 
+        // Tác động Phản / Phục Ngâm Hướng
+        if (isHuongPhanPhuc && !isHuongPhanPhucVuong) {
+          lrScore -= 35;
+          lrRating = (lrScore <= 25) ? `Xấu (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)` : `Cần Hóa Giải (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)`;
+          lrDesc += ` <span class="rule-warn-inline">⚠️ Hướng Tinh (${huong}) phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm: Không gian động dễ kích động sát khí tài chính, cần đặt vật phẩm thông quan chuyển hóa.</span>`;
+          lrBadges.unshift({ text: `Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'warning' });
+        }
+
+        // Tác động Đả Kiếp
+        if (isDaKiepPalace) {
+          lrScore = Math.max(lrScore, 95);
+          lrRating = 'Xuất Sắc (Cung Đả Kiếp)';
+          lrDesc = `⭐ <strong>Thuộc Tam Giác Khí Đả Kiếp:</strong> ` + lrDesc;
+          lrBadges.unshift({ text: 'Cung Đả Kiếp', type: 'success' });
+        }
+
+        // Tác động Hợp Thập
+        if (isHuongVanHT || isSonHuongHT) {
+          lrDesc += ` <span class="rule-good-inline">✨ Được Hợp Thập toàn bàn thông khí che chở.</span>`;
+        }
+
         analysis.livingRooms.push({
           palace: p, name, dir, son, huong, van,
           rating: lrRating, score: lrScore, desc: lrDesc, badges: lrBadges
@@ -212,6 +292,27 @@
           balDesc = `Hướng tinh (${huong}) thoái khí. Mở cửa sổ đón sáng bình thường, nên trồng cây cảnh lọc khí.`;
         }
 
+        // Tác động Phản / Phục Ngâm Hướng
+        if (isHuongPhanPhuc && !isHuongPhanPhucVuong) {
+          balScore -= 35;
+          balRating = (balScore <= 25) ? `Hạn Chế (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)` : `Cần Hóa Giải (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)`;
+          balDesc += ` <span class="rule-warn-inline">⚠️ Hướng Tinh (${huong}) phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm: Khí nạp qua ban công đối xung Lạc Thư, nên buông rèm hoặc đặt vật phẩm thông quan.</span>`;
+          balBadges.unshift({ text: `Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'warning' });
+        }
+
+        // Tác động Đả Kiếp
+        if (isDaKiepPalace) {
+          balScore = Math.max(balScore, 95);
+          balRating = 'Đại Cát (Khí Khẩu Đả Kiếp)';
+          balDesc = `⭐ <strong>Khí Khẩu Đả Kiếp (${thatTinhDaKiep.label}):</strong> Ban công/cửa sổ mở tại đây kết nối trục dẫn khí tương lai cực vượng!`;
+          balBadges.unshift({ text: 'Khí Khẩu Đả Kiếp', type: 'success' });
+        }
+
+        // Tác động Hợp Thập
+        if (isHuongVanHT || isSonHuongHT) {
+          balDesc += ` <span class="rule-good-inline">✨ Được Toàn Bàn Hợp Thập cứu giải thông khí.</span>`;
+        }
+
         analysis.balconies.push({
           palace: p, name, dir, son, huong, van,
           rating: balRating, score: balScore, desc: balDesc, badges: balBadges
@@ -244,6 +345,19 @@
           bedRating = 'Bình';
           bedScore = 50;
           bedDesc = `Sơn tinh (${son}) thoái khí. Cần kê đầu giường tựa vào vách tường kiên cố, tránh gió lùa.`;
+        }
+
+        // Tác động Phản / Phục Ngâm Sơn
+        if (isSonPhanPhuc && !isSonPhanPhucVuong) {
+          bedScore -= 35;
+          bedRating = (bedScore <= 25) ? `Rất Xấu (Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm Sơn)` : `Lưu Ý (Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm Sơn)`;
+          bedDesc += ` <span class="rule-warn-inline">⚠️ Sơn Tinh (${son}) phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm: Dễ gây bất an gia đạo, người nằm ngủ dễ đau ốm, thị phi. Cần giữ không gian tối tĩnh và đặt vật phẩm Ngũ Hành thông quan để hóa giải.</span>`;
+          bedBadges.unshift({ text: `Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'warning' });
+        }
+
+        // Tác động Hợp Thập
+        if (isSonVanHT || isSonHuongHT) {
+          bedDesc += ` <span class="rule-good-inline">✨ Đắc Toàn Bàn Sơn Vận Hợp Thập: Sức khỏe, gia đạo được hòa hợp che chở.</span>`;
         }
 
         analysis.bedrooms.push({
@@ -283,6 +397,14 @@
           kitchenDesc = `Sơn tinh (${son}) trung bình. Có thể đặt bếp nếu các cung tốt khác đã ưu tiên cho phòng ngủ.`;
         }
 
+        // Tác động Phản / Phục Ngâm Sơn
+        if (isSonPhanPhuc && !isSonPhanPhucVuong) {
+          kitchenScore -= 20;
+          if (kitchenRating === 'Tốt') kitchenRating = `Lưu Ý (Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm)`;
+          kitchenDesc += ` <span class="rule-warn-inline">⚠️ Tọa vị bếp có Sơn Tinh phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm: Cần giữ bếp luôn sạch sẽ, tránh động khí mạnh.</span>`;
+          kitchenBadges.push({ text: `Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'warning' });
+        }
+
         // Đánh giá hướng bếp (Hướng lưng người nấu nhìn về hướng tinh)
         let huongBepAdvice = '';
         if (huong === 1) {
@@ -316,10 +438,10 @@
           stairDesc = `Trung Cung phạm <strong>${has25Sat ? 'Nhị Hắc - Ngũ Hoàng [2-5]' : hasDauNguuSat ? 'Đấu Ngưu Sát [3-2]' : 'Xuyên Tâm Sát [3-7]'}</strong>. Đặt cầu thang/giếng trời ở giữa nhà sẽ tán phát sát khí, tranh chấp, bệnh tật lan tỏa đi khắp các tầng.`;
           stairBadges.push({ text: 'Đại kỵ', type: 'danger' });
         } else if (isHuongTinhNhapTu || isSonTinhNhapTu) {
-          stairRating = 'Rất Tốt (Giải Lệnh Tinh Nhập Tù)';
-          stairScore = 95;
-          stairDesc = `Trạch bàn bị thế <strong>"Lệnh tinh nhập tù"</strong> tại Trung Cung. Đặt giếng trời, khoảng thông tầng hoặc cầu thang tại giữa nhà sẽ giúp động khí giải thoát vượng tinh (${vanTrach}), cứu vãn tài lộc cho ngôi nhà.`;
-          stairBadges.push({ text: 'Giải cứu tài vận', type: 'success' });
+          stairRating = 'Xuất Sắc (Động Khí Giải Tù)';
+          stairScore = 100;
+          stairDesc = `⭐ <strong>ĐỘNG KHÍ GIẢI TÙ QUYẾT:</strong> Trạch bàn đang bị Lệnh Tinh Nhập Tù (Vận ${vanTrach}). Đặt cầu thang thông tầng hoặc giếng trời lớn tại Trung Cung là phương án cứu tinh số 1 để đối lưu giải thoát vượng khí lan tỏa khắp nhà!`;
+          stairBadges = [{ text: 'Động Khí Giải Tù', type: 'success' }, { text: 'Ưu tiên số 1', type: 'success' }];
         } else {
           stairRating = 'Lưu Ý';
           stairScore = 50;
@@ -341,6 +463,22 @@
           stairScore = 50;
           stairDesc = `Hướng tinh (${huong}) trung bình. Bố trí cầu thang gọn gàng, đón sáng tốt.`;
         }
+
+        // Tác động Phản / Phục Ngâm Hướng
+        if (isHuongPhanPhuc && !isHuongPhanPhucVuong) {
+          stairScore = 15;
+          stairRating = `Cực Hung (Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm)`;
+          stairDesc += ` <span class="rule-warn-inline">⚠️ Hướng Tinh phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm: Trục dẫn khí liên tầng sẽ phát tán sát khí bế tắc tài lộc đi khắp các tầng. Tuyệt đối tránh đặt cầu thang tại đây!</span>`;
+          stairBadges.unshift({ text: `Phạm ${isHuongPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'danger' });
+        }
+
+        // Tác động Đả Kiếp
+        if (isDaKiepPalace) {
+          stairScore = Math.max(stairScore, 95);
+          stairRating = 'Đại Cát (Trục Dẫn Khí Đả Kiếp)';
+          stairDesc = `⭐ <strong>Trục Dẫn Khí Đả Kiếp (${thatTinhDaKiep.label}):</strong> Cầu thang/thông tầng đặt tại đây sẽ luân chuyển liên tục dòng khí tương lai đi khắp nhà!`;
+          stairBadges.unshift({ text: 'Khí Khẩu Đả Kiếp', type: 'success' });
+        }
       }
 
       analysis.stairs.push({
@@ -361,6 +499,11 @@
         wcScore = 0;
         wcDesc = `<strong>Đại kỵ số 1 trong phong thủy:</strong> Nhà vệ sinh đặt tại Trung Cung (giữa nhà) làm ô uế tim nhà, phát tán xú khí khắp 8 cung, gây tổn hại nặng nề đến sức khỏe và tài vận của cả gia đình.`;
         wcBadges.push({ text: 'Tuyệt đối cấm', type: 'danger' });
+      } else if (isDaKiepPalace) {
+        wcRating = 'Cấm (Phạm Cung Đả Kiếp)';
+        wcScore = 5;
+        wcDesc = `⚠️ <strong>Cung thuộc Tam Giác Khí Thất Tinh Đả Kiếp:</strong> Cấm tuyệt đối đặt nhà vệ sinh hoặc bể phốt tại đây vì sẽ làm ô uế trục dẫn khí tương lai, phá vỡ toàn bộ thế trận Đả Kiếp!`;
+        wcBadges.unshift({ text: 'Phá Thế Đả Kiếp', type: 'danger' });
       } else if (isVanXuong) {
         wcRating = 'Cấm (Ô Uế Văn Xương)';
         wcScore = 5;
@@ -431,6 +574,14 @@
           studyDesc = `Cung vị trung bình, có thể bố trí bàn học nếu các cung tốt hơn đã ưu tiên cho phòng ngủ.`;
         }
 
+        // Tác động Phản / Phục Ngâm Sơn
+        if (isSonPhanPhuc && !isSonPhanPhucVuong) {
+          studyScore -= 25;
+          if (studyRating === 'Tốt' || studyRating === 'Khá Tốt') studyRating = `Lưu Ý (Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm)`;
+          studyDesc += ` <span class="rule-warn-inline">⚠️ Sơn Tinh phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm gây phân tán tư tưởng, cần đặt tháp văn xương hoặc hồ lô hóa giải.</span>`;
+          studyBadges.push({ text: `Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'warning' });
+        }
+
         analysis.studies.push({
           palace: p, name, dir, son, huong, van,
           rating: studyRating, score: studyScore, desc: studyDesc, badges: studyBadges
@@ -463,6 +614,14 @@
           altarDesc = `Vị trí trung bình. Bàn thờ cần đặt nơi cao ráo, thanh tịnh, tránh đối diện WC hoặc bếp lò.`;
         }
 
+        // Tác động Phản / Phục Ngâm Sơn
+        if (isSonPhanPhuc && !isSonPhanPhucVuong) {
+          altarScore -= 30;
+          altarRating = (altarScore <= 30) ? `Hạn Chế (Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm)` : `Lưu Ý (Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm)`;
+          altarDesc += ` <span class="rule-warn-inline">⚠️ Sơn Tinh phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm: Nơi thờ tự dễ bị giao động trường khí, cần giữ tối tĩnh và đặt vật phẩm ngũ hành thông quan tương sinh.</span>`;
+          altarBadges.unshift({ text: `Phạm ${isSonPhan ? 'Phản' : 'Phục'} Ngâm`, type: 'warning' });
+        }
+
         analysis.altars.push({
           palace: p, name, dir, son, huong, van,
           rating: altarRating, score: altarScore, desc: altarDesc, badges: altarBadges
@@ -472,6 +631,12 @@
       // --- TỔNG HỢP CUNG VỊ ---
       analysis.palaceSummaries[p] = {
         palace: p, name, dir, son, huong, van, isCenter,
+        isPhanNgamSon: isSonPhan && !isSonPhanPhucVuong,
+        isPhucNgamSon: isSonPhuc && !isSonPhanPhucVuong,
+        isPhanNgamHuong: isHuongPhan && !isHuongPhanPhucVuong,
+        isPhucNgamHuong: isHuongPhuc && !isHuongPhanPhucVuong,
+        isDaKiep: isDaKiepPalace,
+        isHopThap: hasToanBanHopThap,
         door: analysis.doors.find(d => d.palace === p),
         livingRoom: analysis.livingRooms.find(lr => lr.palace === p),
         balcony: analysis.balconies.find(b => b.palace === p),
@@ -583,7 +748,7 @@
             <div class="kv-banner-title">CẢNH BÁO ĐẠI HÙNG SÁT: ĐỘ SỐ PHẠM ${kvInfo.label.toUpperCase()}</div>
             <p class="kv-banner-desc">${kvInfo.desc}</p>
             <div class="kv-banner-advice">
-              💡 <strong>LỜI KHUYÊN HÓA GIẢI THỰC TẾ:</strong> Trục Không Vong là ranh giới giao thoa hai dòng khí đối kháng khiến trường khí nhà bị hỗn loạn, quái dị, đại bại. Gia chủ bắt buộc phải <strong>xoay lệch khuôn cửa chính / hướng cửa đi $2^\circ - 3^\circ$</strong> (về phía Chính Sơn thuần khí) để triệt để thoát khỏi đường Không Vong trước khi bài trí nội thất.
+              💡 <strong>LỜI KHUYÊN HÓA GIẢI THỰC TẾ:</strong> Trục Không Vong là ranh giới giao thoa hai dòng khí đối kháng khiến trường khí nhà bị hỗn loạn, quái dị, đại bại. Gia chủ bắt buộc phải <strong>xoay lệch khuôn cửa chính / hướng cửa đi 2° - 3°</strong> (về phía Chính Sơn thuần khí) để triệt để thoát khỏi đường Không Vong trước khi bài trí nội thất.
             </div>
           </div>
         </div>
@@ -648,7 +813,7 @@
       <!-- Tab 2: Phòng Khách -->
       <div class="interp-tab-panel" id="tab-living">
         <div class="interp-guide-tip">
-          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Phòng khách là không gian sinh hoạt chung, người đi lại nhiều $\rightarrow$ thuộc trạng thái <strong>Động</strong>. Ưu tiên đặt tại cung có <strong>Hướng Tinh Vượng Khí (Sao ${sVuong})</strong> hoặc <strong>Sinh Khí (Sao ${sSinh})</strong> để kích hoạt tài lộc. Đại kỵ đặt tại cung có cặp sát tinh <strong>[2-5] hoặc [5-2]</strong> (gây bất hòa, đau ốm cho cả nhà).
+          🎯 <strong>Nguyên lý (Vận ${v}):</strong> Phòng khách là không gian sinh hoạt chung, người đi lại nhiều → thuộc trạng thái <strong>Động</strong>. Ưu tiên đặt tại cung có <strong>Hướng Tinh Vượng Khí (Sao ${sVuong})</strong> hoặc <strong>Sinh Khí (Sao ${sSinh})</strong> để kích hoạt tài lộc. Đại kỵ đặt tại cung có cặp sát tinh <strong>[2-5] hoặc [5-2]</strong> (gây bất hòa, đau ốm cho cả nhà).
         </div>
         <div class="interp-cards-grid">
           ${analysis.livingRooms.map(lr => renderCardItem(lr, 'Phòng Khách', `Hướng Tinh [${lr.huong}]`)).join('')}
@@ -884,7 +1049,7 @@
           const isSon = (item.starType === 'Sơn Tinh');
           let remedyAdvice = '';
           if (item.isVuong) {
-            remedyAdvice = `🌟 <strong>Đắc cách Vượng Khí:</strong> Sao ${item.star} là Vượng Khí Vận ${van}. Nếu ${isSon ? 'ngoại cục có Sơn/nhà cao che chắn' : 'ngoại cục có Thủy/đường thoáng/minh đường rộng'} $\rightarrow$ Cát hóa hung, không lo hung sát.`;
+            remedyAdvice = `🌟 <strong>Đắc cách Vượng Khí:</strong> Sao ${item.star} là Vượng Khí Vận ${van}. Nếu ${isSon ? 'ngoại cục có Sơn/nhà cao che chắn' : 'ngoại cục có Thủy/đường thoáng/minh đường rộng'} → Cát hóa hung, không lo hung sát.`;
           } else {
             remedyAdvice = `🛡️ <strong>Hóa giải thông quan:</strong> ${isSon ? 'Giữ không gian tĩnh, đặt vật phẩm Ngũ Hành tương sinh thông quan để làm dịu sát khí.' : 'Tránh mở cửa nạp khí động tại cung này, đặt vật phẩm Ngũ Hành thông quan để chuyển hóa năng lượng.'}`;
           }
@@ -922,7 +1087,7 @@
 
     return `
       <div class="interp-guide-tip">
-        🎯 <strong>Nguyên lý Lệnh Tinh Nhập Tù:</strong> Một ngôi nhà dù vượng đến đâu, khi sao vượng khí (Lệnh Tinh) bị rơi vào <strong>Trung Cung (Cung số 5)</strong> thì gọi là <em>Nhập Tù</em> (bị giam cầm). Hướng tinh nhập tù $\rightarrow$ <strong>Tài Tù</strong> (tài lộc bế tắc); Sơn tinh nhập tù $\rightarrow$ <strong>Đinh Tù</strong> (nhân đinh suy bại).
+        🎯 <strong>Nguyên lý Lệnh Tinh Nhập Tù:</strong> Một ngôi nhà dù vượng đến đâu, khi sao vượng khí (Lệnh Tinh) bị rơi vào <strong>Trung Cung (Cung số 5)</strong> thì gọi là <em>Nhập Tù</em> (bị giam cầm). Hướng tinh nhập tù → <strong>Tài Tù</strong> (tài lộc bế tắc); Sơn tinh nhập tù → <strong>Đinh Tù</strong> (nhân đinh suy bại).
       </div>
 
       <!-- Trạng thái hiện tại -->
@@ -949,7 +1114,7 @@
             <strong class="nt-rem-title">1. Giải Tù Ngoại Cục (Hướng Thượng Hữu Thủy)</strong>
           </div>
           <p class="nt-rem-text">
-            Cổ quyết dạy: <em>"Hướng thượng hữu thủy, tù bất trụ"</em>. Nếu phía trước mặt nhà (đầu hướng) có <strong>ao hồ, sông suối, hồ bơi, hoặc ngã ba ngã tư rộng thoáng (Minh đường tụ thủy)</strong> $\rightarrow$ Động khí của nước và giao lộ sẽ dẫn dắt vượng khí thoát khỏi trung cung, <strong>Giải Tù Thành Công</strong>.
+            Cổ quyết dạy: <em>"Hướng thượng hữu thủy, tù bất trụ"</em>. Nếu phía trước mặt nhà (đầu hướng) có <strong>ao hồ, sông suối, hồ bơi, hoặc ngã ba ngã tư rộng thoáng (Minh đường tụ thủy)</strong> → Động khí của nước và giao lộ sẽ dẫn dắt vượng khí thoát khỏi trung cung, <strong>Giải Tù Thành Công</strong>.
           </p>
         </div>
 
@@ -959,7 +1124,7 @@
             <strong class="nt-rem-title">2. Giải Tù Nội Thất (Động Khí Trung Cung)</strong>
           </div>
           <p class="nt-rem-text">
-            Tại khu vực giữa nhà (Trung Cung), thiết kế <strong>Cầu thang thông tầng hoặc Giếng trời lớn</strong> $\rightarrow$ Trục đối lưu không khí thẳng đứng từ dưới đất lên mái nhà làm tiêu tan sự tù hãm, đưa vượng khí lan tỏa khắp các tầng, <strong>Giải Tù Thành Công</strong>.
+            Tại khu vực giữa nhà (Trung Cung), thiết kế <strong>Cầu thang thông tầng hoặc Giếng trời lớn</strong> → Trục đối lưu không khí thẳng đứng từ dưới đất lên mái nhà làm tiêu tan sự tù hãm, đưa vượng khí lan tỏa khắp các tầng, <strong>Giải Tù Thành Công</strong>.
           </p>
         </div>
       </div>
@@ -1048,6 +1213,14 @@
   function renderPalaceOverview(pal) {
     if (!pal) return '';
 
+    const flags = [];
+    if (pal.isPhanNgamSon) flags.push('<span class="pal-flag-pill flag-danger" title="Sơn tinh phạm Phản Ngâm">⚡ Phản Ngâm Sơn</span>');
+    if (pal.isPhucNgamSon) flags.push('<span class="pal-flag-pill flag-danger" title="Sơn tinh phạm Phục Ngâm">⚡ Phục Ngâm Sơn</span>');
+    if (pal.isPhanNgamHuong) flags.push('<span class="pal-flag-pill flag-danger" title="Hướng tinh phạm Phản Ngâm">⚡ Phản Ngâm Hướng</span>');
+    if (pal.isPhucNgamHuong) flags.push('<span class="pal-flag-pill flag-danger" title="Hướng tinh phạm Phục Ngâm">⚡ Phục Ngâm Hướng</span>');
+    if (pal.isDaKiep) flags.push('<span class="pal-flag-pill flag-gold" title="Thuộc tam giác khí Thất Tinh Đả Kiếp">⭐ Cung Đả Kiếp</span>');
+    if (pal.isHopThap) flags.push('<span class="pal-flag-pill flag-gold" title="Đắc Hợp Thập thông khí">✨ Hợp Thập</span>');
+
     return `
       <div class="palace-overview-card">
         <div class="pal-card-header">
@@ -1059,6 +1232,7 @@
               <span class="star-pill-van" title="Vận Tinh">Vận: ${pal.van}</span>
             </div>
           </div>
+          ${flags.length > 0 ? `<div class="pal-flags-row">${flags.join(' ')}</div>` : ''}
         </div>
         
         <div class="pal-items-list">
@@ -1078,10 +1252,10 @@
 
   function getStatusClass(rating) {
     if (!rating) return '';
-    if (rating.includes('Xuất Sắc') || rating.includes('Rất Tốt') || rating.includes('Cực Tốt') || rating.includes('Văn Xương') || rating.includes('Dĩ Độc Trị Độc')) return 'status-good';
+    if (rating.includes('Đại Cát') || rating.includes('Xuất Sắc') || rating.includes('Rất Tốt') || rating.includes('Cực Tốt') || rating.includes('Văn Xương') || rating.includes('Dĩ Độc Trị Độc') || rating.includes('Giải Lệnh Tinh') || rating.includes('Động Khí Giải Tù')) return 'status-good';
     if (rating.includes('Tốt') || rating.includes('Cát') || rating.includes('Khá Tốt')) return 'status-primary';
     if (rating.includes('Lưu Ý') || rating.includes('Không Khuyến Khích') || rating.includes('Hạn Chế')) return 'status-warn';
-    if (rating.includes('Đại Kỵ') || rating.includes('Rất Xấu') || rating.includes('Cực Hung') || rating.includes('Cấm') || rating.includes('Không Tốt') || rating.includes('Tránh Đặt') || rating.includes('Sát Tinh') || rating.includes('Phạm Sát')) return 'status-danger';
+    if (rating.includes('Đại Kỵ') || rating.includes('Rất Xấu') || rating.includes('Cực Hung') || rating.includes('Cấm') || rating.includes('Không Tốt') || rating.includes('Tránh Đặt') || rating.includes('Sát Tinh') || rating.includes('Phạm Sát') || rating.includes('Cần Hóa Giải') || rating.includes('Phản Ngâm') || rating.includes('Phục Ngâm')) return 'status-danger';
     return 'status-neutral';
   }
 
