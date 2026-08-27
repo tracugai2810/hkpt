@@ -257,9 +257,17 @@
     
     if (actionContainer) actionContainer.classList.remove('hidden');
     
-    // Warning
+    // Warning Box for Không Vong
     if (warningBox) {
-      if (result.chartType === 'KHONG_VONG') {
+      if (result.chartType === 'DAI_KHONG_VONG' || result.chartType === 'TIEU_KHONG_VONG' || result.chartType === 'KHONG_VONG' || result.isKhongVong) {
+        const kvInfo = result.khongVongInfo;
+        const kvLabel = kvInfo ? kvInfo.label : 'Không Vong';
+        const kvDesc = kvInfo ? kvInfo.desc : 'Độ số phạm tuyến Không Vong.';
+        warningBox.innerHTML = `
+          <div class="warning-title">🚨 CẢNH BÁO ĐẠI HÙNG SÁT: ${kvLabel.toUpperCase()}</div>
+          <div class="warning-desc">${kvDesc}</div>
+          <div class="warning-advice">💡 <strong>Lời khuyên hóa giải thực tế:</strong> Tuyến Không Vong là ranh giới giao thoa khí trường hỗn loạn. Gia chủ nên <strong>xoay lệch khuôn cửa chính / hướng cửa đi $2^\circ$ đến $3^\circ$</strong> (về phía Chính Sơn thuần khí) để triệt để thoát khỏi đường ranh giới Không Vong trước khi bài trí nội thất.</div>
+        `;
         warningBox.classList.remove('hidden');
       } else {
         warningBox.classList.add('hidden');
@@ -298,12 +306,30 @@
       } else if (result.chartType === 'THE_QUAI') {
         badgeClass = 'badge-the-quai';
         badgeText = 'Thế Quái';
+      } else if (result.chartType === 'DAI_KHONG_VONG') {
+        badgeClass = 'badge-khong-vong badge-dai-kv';
+        badgeText = 'Đại Không Vong';
+      } else if (result.chartType === 'TIEU_KHONG_VONG') {
+        badgeClass = 'badge-khong-vong badge-tieu-kv';
+        badgeText = 'Tiểu Không Vong';
       } else {
         badgeClass = 'badge-khong-vong';
         badgeText = 'Không Vong';
       }
       
       infoHTML += ` <span class="chart-type-badge ${badgeClass}">${badgeText}</span>`;
+
+      // Special Formation Badges
+      if (result.hopThap && result.hopThap.hasHopThap) {
+        infoHTML += ` <span class="chart-type-badge badge-hop-thap" title="${result.hopThap.label}">✨ ${result.hopThap.label}</span>`;
+      }
+      if (result.tamBanQuai && result.tamBanQuai.hasTamBanQuai) {
+        infoHTML += ` <span class="chart-type-badge badge-tam-ban" title="${result.tamBanQuai.label}">💫 ${result.tamBanQuai.label}</span>`;
+      }
+      if (result.thatTinhDaKiep && result.thatTinhDaKiep.hasThatTinhDaKiep) {
+        infoHTML += ` <span class="chart-type-badge badge-da-kiep" title="${result.thatTinhDaKiep.label}">⚡ ${result.thatTinhDaKiep.label}</span>`;
+      }
+
       infoHTML += `</div>`;
       
       infoMain.innerHTML = infoHTML;

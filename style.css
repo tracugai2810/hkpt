@@ -3147,4 +3147,485 @@ select.input-field {
   color: #475569;
 }
 
+/* ============================================================
+   Phản Phục Ngâm, Lệnh Tinh Nhập Tù & Không Vong Styling
+   ============================================================ */
+
+/* Badges for Đại & Tiểu Không Vong */
+.badge-dai-kv {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #b91c1c !important;
+  animation: pulseKv 2s infinite;
+}
+
+.badge-tieu-kv {
+  background: #ea580c !important;
+  color: #ffffff !important;
+  border-color: #c2410c !important;
+}
+
+@keyframes pulseKv {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2); }
+}
+
+/* Banner Cảnh Báo Đại Không Vong / Tiểu Không Vong */
+.khong-vong-banner {
+  border-left: 5px solid #dc2626 !important;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%) !important;
+  border: 1px solid #fecaca !important;
+  padding: 16px 18px !important;
+  margin-bottom: 20px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.08) !important;
+}
+
+.kv-banner-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #991b1b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kv-banner-desc {
+  font-size: 0.9rem;
+  color: #334155;
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.kv-banner-advice {
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid #2563eb;
+  font-size: 0.88rem;
+  color: #1e293b;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.kv-banner-advice strong {
+  color: #1d4ed8;
+}
+
+/* Interp Clean Card (Không phạm sát) */
+.interp-clean-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 12px;
+}
+
+.clean-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.clean-content h4 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.clean-content p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #166534;
+  line-height: 1.5;
+}
+
+/* Nhập Tù Status Card */
+.nhap-tu-status-card {
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  border: 1px solid #e2e8f0;
+}
+
+.status-danger-box {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+  border-color: #fecaca;
+  border-left: 5px solid #dc2626;
+}
+
+.status-good-box {
+  background: linear-gradient(135deg, #f0fdf4 0%, #f0fdfa 100%);
+  border-color: #bbf7d0;
+  border-left: 5px solid #16a34a;
+}
+
+.nt-status-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.nt-status-icon {
+  font-size: 1.4rem;
+}
+
+.nt-status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nt-status-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.nt-status-title {
+  margin: 2px 0 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.status-danger-box .nt-status-title { color: #991b1b; }
+.status-good-box .nt-status-title   { color: #15803d; }
+
+.nt-status-desc {
+  margin: 6px 0 0 0;
+  font-size: 0.88rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+/* Nhập Tù Remedies Grid */
+.nhap-tu-remedies-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .nhap-tu-remedies-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nt-remedy-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.nt-rem-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.nt-rem-icon {
+  font-size: 1.25rem;
+}
+
+.nt-rem-title {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.nt-rem-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.nt-rem-text strong {
+  color: #0f766e;
+}
+
+/* Forecast Table */
+.nhap-tu-forecast-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.forecast-title {
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.forecast-table-wrapper {
+  overflow-x: auto;
+}
+
+.forecast-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.forecast-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.forecast-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.row-current-van {
+  background: #f0fdfa !important;
+  font-weight: 600;
+}
+
+.row-danger {
+  background: #fff1f2;
+}
+
+.badge-cur-van {
+  display: inline-block;
+  font-size: 0.7rem;
+  background: #0f766e;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+.forecast-status-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.forecast-status-badge.badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.forecast-status-badge.badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ============================================================
+   Đại Cát Cách (Hợp Thập, Tam Ban Quái, Thất Tinh Đả Kiếp)
+   ============================================================ */
+
+/* Badges Header */
+.badge-hop-thap {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+  font-weight: 700 !important;
+}
+
+.badge-tam-ban {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  font-weight: 700 !important;
+}
+
+.badge-da-kiep {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  color: #ffffff !important;
+  border-color: #a78bfa !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+  font-weight: 700 !important;
+}
+
+/* Special Formation Top Banner */
+.special-formation-banner {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 1px solid #fde68a !important;
+  border-left: 5px solid #d97706 !important;
+  padding: 16px 18px !important;
+  margin-bottom: 20px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.1) !important;
+}
+
+.special-banner-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.special-banner-desc {
+  font-size: 0.88rem;
+  color: #78350f;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Dai Cat Tab Content */
+.dai-cat-sections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.dai-cat-card {
+  border-radius: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.dai-cat-card.card-dac-cach {
+  background: linear-gradient(to bottom, #fffdfa, #ffffff);
+  border-color: #fcd34d;
+  border-left: 5px solid #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+}
+
+.dai-cat-card.card-khong-dac {
+  background: #f8fafc;
+  opacity: 0.85;
+}
+
+.dc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.dc-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.dc-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.dc-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.card-dac-cach .dc-badge { color: #d97706; }
+.card-khong-dac .dc-badge { color: #94a3b8; }
+
+.dc-title {
+  margin: 2px 0 0 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dc-body {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.dc-desc {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.dc-dac-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dc-dac-title {
+  font-size: 0.96rem;
+  color: #b45309;
+}
+
+.dc-dac-scope {
+  margin: 0;
+  font-weight: 600;
+  color: #047857;
+}
+
+.dc-dac-desc {
+  margin: 0;
+  color: #334155;
+}
+
+.dc-linked-palaces {
+  margin-top: 6px;
+  background: #fefce8;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #fef08a;
+}
+
+.lp-label {
+  font-size: 0.82rem;
+  color: #854d0e;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.lp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: #713f12;
+}
+
+.lp-chip {
+  background: #ffffff;
+  border: 1px solid #facc15;
+  padding: 3px 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.dc-loandau-tip {
+  margin-top: 8px;
+  background: #f0fdf4;
+  border-left: 3px solid #16a34a;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: #14532d;
+  line-height: 1.5;
+}
+
+
 

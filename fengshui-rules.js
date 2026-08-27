@@ -16,8 +16,16 @@
 
     const vanTrach = chartResult.van || 9;
     const palaces = chartResult.palaces;
-    const isKiem = chartResult.chartType === 'kiem';
+    const isKiem = chartResult.chartType === 'THE_QUAI' || chartResult.chartType === 'kiem';
+    const isKhongVong = chartResult.isKhongVong || chartResult.chartType === 'DAI_KHONG_VONG' || chartResult.chartType === 'TIEU_KHONG_VONG' || chartResult.chartType === 'KHONG_VONG';
+    const khongVongInfo = chartResult.khongVongInfo || null;
     const facingDegree = chartResult.facingDegree || 0;
+
+    const phanPhucNgam = chartResult.phanPhucNgam || (window.FlyingStar && window.FlyingStar.analyzePhanPhucNgam ? window.FlyingStar.analyzePhanPhucNgam(palaces, vanTrach) : null);
+    const nhapTu = chartResult.nhapTu || (window.FlyingStar && window.FlyingStar.analyzeNhapTu ? window.FlyingStar.analyzeNhapTu(palaces, vanTrach) : null);
+    const hopThap = chartResult.hopThap || (window.FlyingStar && window.FlyingStar.analyzeHopThap ? window.FlyingStar.analyzeHopThap(palaces) : null);
+    const tamBanQuai = chartResult.tamBanQuai || (window.FlyingStar && window.FlyingStar.analyzeTamBanQuai ? window.FlyingStar.analyzeTamBanQuai(palaces) : null);
+    const thatTinhDaKiep = chartResult.thatTinhDaKiep || (window.FlyingStar && window.FlyingStar.analyzeThatTinhDaKiep ? window.FlyingStar.analyzeThatTinhDaKiep(palaces, chartResult.facingMountain ? chartResult.facingMountain.palace : null, vanTrach) : null);
 
     // 1. Phân loại Cát - Hung của các Sao theo Vận Trạch hiện tại
     const saoVuongKhi = vanTrach;
@@ -32,8 +40,8 @@
     );
 
     // Kiểm tra Lệnh tinh nhập tù ở Trung Cung (Palace 5)
-    const isHuongTinhNhapTu = palaces[5] && palaces[5].huong === vanTrach;
-    const isSonTinhNhapTu = palaces[5] && palaces[5].son === vanTrach;
+    const isHuongTinhNhapTu = nhapTu ? nhapTu.isHuongNhapTuCurrent : (palaces[5] && palaces[5].huong === vanTrach);
+    const isSonTinhNhapTu = nhapTu ? nhapTu.isSonNhapTuCurrent : (palaces[5] && palaces[5].son === vanTrach);
 
     // Phân tích theo từng không gian chức năng
     const analysis = {
@@ -46,6 +54,13 @@
         saoCatTinh,
         saoSuyTu,
         isKiem,
+        isKhongVong,
+        khongVongInfo,
+        phanPhucNgam,
+        nhapTu,
+        hopThap,
+        tamBanQuai,
+        thatTinhDaKiep,
         facingDegree,
         isHuongTinhNhapTu,
         isSonTinhNhapTu
@@ -500,6 +515,15 @@
     const sSuy = meta.saoSuyTu.join(', ');
     const sCat = meta.saoCatTinh ? meta.saoCatTinh.join(', ') : '1, 6, 8, 9';
 
+    const phanPhuc = meta.phanPhucNgam;
+    const nhapTu = meta.nhapTu;
+    const hopThap = meta.hopThap;
+    const tamBanQuai = meta.tamBanQuai;
+    const thatTinhDaKiep = meta.thatTinhDaKiep;
+    const kvInfo = meta.khongVongInfo;
+
+    const hasSpecialCát = (hopThap && hopThap.hasHopThap) || (tamBanQuai && tamBanQuai.hasTamBanQuai) || (thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep);
+
     return `
       <div class="interp-header">
         <div class="interp-title-group">
@@ -536,20 +560,58 @@
         </div>
       </div>
 
-      ${meta.isKiem ? `
-        <div class="interp-alert-box alert-warn">
-          <span class="alert-icon">⚠️</span>
+      <!-- BANNER ĐẠI CÁT CÁCH (NẾU ĐẮC CÁCH) -->
+      ${hasSpecialCát ? `
+        <div class="interp-alert-box alert-gold special-formation-banner">
+          <span class="alert-icon">✨</span>
           <div class="alert-content">
-            <strong>Nhà phạm tuyến Kiêm Hướng / Không Vong:</strong> Khí trường ra vào có sự pha tạp. Cần đặc biệt chú ý an vị cửa chính và phòng ngủ đúng phương vị chính cung để thu nạp thuần khí.
+            <div class="special-banner-title">🎉 TRẠCH NHÀ ĐẮC THẾ TRẬN ĐẠI CÁT: ${[
+              hopThap && hopThap.hasHopThap ? hopThap.label : '',
+              tamBanQuai && tamBanQuai.hasTamBanQuai ? tamBanQuai.label : '',
+              thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep ? thatTinhDaKiep.label : ''
+            ].filter(Boolean).join(' | ')}</div>
+            <p class="special-banner-desc">Ngôi nhà sở hữu cách cục cát lành thượng thừa (chuyển bại thành thắng, thông khí thiên địa). Hãy bấm tab <strong>"✨ Đại Cát Cách"</strong> bên dưới để xem chi tiết hướng dẫn kích hoạt Loan Đầu.</p>
           </div>
         </div>
       ` : ''}
 
-      ${meta.isHuongTinhNhapTu ? `
-        <div class="interp-alert-box alert-info">
-          <span class="alert-icon">💡</span>
+      <!-- CẢNH BÁO ĐẠI KHÔNG VONG / TIỂU KHÔNG VONG -->
+      ${meta.isKhongVong && kvInfo ? `
+        <div class="interp-alert-box alert-danger khong-vong-banner">
+          <span class="alert-icon">🚨</span>
           <div class="alert-content">
-            <strong>Trạch bàn bị "Lệnh Tinh Nhập Tù":</strong> Sao Vượng Hướng (${sVuong}) rơi vào Trung Cung. Nên bố trí giếng trời, cầu thang hoặc mở khoảng thông tầng ở giữa nhà để giải thoát vượng khí tài lộc.
+            <div class="kv-banner-title">CẢNH BÁO ĐẠI HÙNG SÁT: ĐỘ SỐ PHẠM ${kvInfo.label.toUpperCase()}</div>
+            <p class="kv-banner-desc">${kvInfo.desc}</p>
+            <div class="kv-banner-advice">
+              💡 <strong>LỜI KHUYÊN HÓA GIẢI THỰC TẾ:</strong> Trục Không Vong là ranh giới giao thoa hai dòng khí đối kháng khiến trường khí nhà bị hỗn loạn, quái dị, đại bại. Gia chủ bắt buộc phải <strong>xoay lệch khuôn cửa chính / hướng cửa đi $2^\circ - 3^\circ$</strong> (về phía Chính Sơn thuần khí) để triệt để thoát khỏi đường Không Vong trước khi bài trí nội thất.
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+      ${meta.isKiem && !meta.isKhongVong ? `
+        <div class="interp-alert-box alert-warn">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-content">
+            <strong>Nhà phạm tuyến Kiêm Hướng (Thế Quái):</strong> Khí trường có sự pha tạp nhẹ giữa 2 sơn. Cần chú ý an vị cửa chính và phòng ngủ đúng phương vị chính cung để thu nạp thuần khí.
+          </div>
+        </div>
+      ` : ''}
+
+      ${phanPhuc && (phanPhuc.hasPhucNgam || phanPhuc.hasPhanNgam) ? `
+        <div class="interp-alert-box alert-warn">
+          <span class="alert-icon">⚡</span>
+          <div class="alert-content">
+            <strong>Tinh Bàn Phạm Thế Cục Phản Ngâm / Phục Ngâm:</strong> Có ${phanPhuc.items.length} vị trí sao Sơn/Hướng phạm đại kỵ trùng khít hoặc đối xung với Địa bàn Lạc Thư. Hãy bấm vào tab <strong>"⚡ Phản & Phục Ngâm"</strong> bên dưới để xem chi tiết ảnh hưởng và cách hóa giải thông quan.
+          </div>
+        </div>
+      ` : ''}
+
+      ${nhapTu && nhapTu.isNhapTuCurrent ? `
+        <div class="interp-alert-box alert-info">
+          <span class="alert-icon">🔒</span>
+          <div class="alert-content">
+            <strong>Trạch bàn bị "Lệnh Tinh Nhập Tù" trong Vận ${v}:</strong> ${nhapTu.currentTitle}. Hãy bấm vào tab <strong>"🔒 Lệnh Tinh Nhập Tù"</strong> bên dưới để xem phương án <em>Giải Tù Quyết</em> (Minh đường tụ thủy / Giếng trời thông tầng).
           </div>
         </div>
       ` : ''}
@@ -566,6 +628,9 @@
           <button type="button" class="interp-tab" data-tab="toilets">🚿 Nhà Vệ Sinh</button>
           <button type="button" class="interp-tab" data-tab="studies">📚 Bàn Học / Làm Việc</button>
           <button type="button" class="interp-tab" data-tab="altars">🕯️ Phòng Thờ / Bàn Thờ</button>
+          <button type="button" class="interp-tab" data-tab="dai-cat">✨ Đại Cát Cách</button>
+          <button type="button" class="interp-tab" data-tab="phan-phuc">⚡ Phản & Phục Ngâm</button>
+          <button type="button" class="interp-tab" data-tab="nhap-tu">🔒 Lệnh Tinh Nhập Tù</button>
           <button type="button" class="interp-tab" data-tab="all">🧭 Tổng Hợp 8 Cung</button>
         </div>
       </div>
@@ -660,10 +725,275 @@
         </div>
       </div>
 
-      <!-- Tab 10: Tổng Hợp 8 Cung -->
+      <!-- Tab 10: Đại Cát Cách (Hợp Thập / Tam Ban Quái / Thất Tinh Đả Kiếp) -->
+      <div class="interp-tab-panel" id="tab-dai-cat">
+        ${renderDaiCatTab(meta, v)}
+      </div>
+
+      <!-- Tab 11: Phản Ngâm & Phục Ngâm -->
+      <div class="interp-tab-panel" id="tab-phan-phuc">
+        ${renderPhanPhucNgamTab(phanPhuc, v)}
+      </div>
+
+      <!-- Tab 12: Lệnh Tinh Nhập Tù -->
+      <div class="interp-tab-panel" id="tab-nhap-tu">
+        ${renderNhapTuTab(nhapTu, v)}
+      </div>
+
+      <!-- Tab 13: Tổng Hợp 8 Cung -->
       <div class="interp-tab-panel" id="tab-all">
         <div class="interp-all-grid">
           ${[1, 2, 3, 4, 6, 7, 8, 9].map(p => renderPalaceOverview(analysis.palaceSummaries[p])).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDaiCatTab(meta, v) {
+    const hopThap = meta.hopThap;
+    const tamBanQuai = meta.tamBanQuai;
+    const thatTinhDaKiep = meta.thatTinhDaKiep;
+
+    return `
+      <div class="interp-guide-tip">
+        🎯 <strong>Nguyên Lý Đại Cát Cách:</strong> Trong Huyền Không Phi Tinh, khi trạch nhà đắc các thế trận đặc biệt như <em>Hợp Thập (Thiên Tâm Thập Đạo)</em>, <em>Tam Ban Quái</em> hoặc <em>Thất Tinh Đả Kiếp</em>, ngôi nhà sẽ được thông khí thiên địa, có thể <strong>chuyển bại thành thắng</strong>, hóa giải cả thế cục xấu như Thượng sơn hạ thủy để đón nhận cát khí vượng phát dài lâu.
+      </div>
+
+      <div class="dai-cat-sections-container">
+        <!-- 1. PHÉP HỢP THẬP (THIÊN TÂM THẬP ĐẠO) -->
+        <div class="dai-cat-card ${hopThap && hopThap.hasHopThap ? 'card-dac-cach' : 'card-khong-dac'}">
+          <div class="dc-head">
+            <span class="dc-icon">${hopThap && hopThap.hasHopThap ? '🌟' : '⚪'}</span>
+            <div class="dc-title-group">
+              <span class="dc-badge">${hopThap && hopThap.hasHopThap ? 'ĐẮC THẾ TRẬN' : 'KHÔNG ĐẮC CÁCH'}</span>
+              <h4 class="dc-title">1. Phép Hợp Thập (Thiên Tâm Thập Đạo)</h4>
+            </div>
+          </div>
+          <div class="dc-body">
+            ${hopThap && hopThap.hasHopThap ? `
+              <div class="dc-dac-box">
+                <strong class="dc-dac-title">🎉 ${hopThap.label}</strong>
+                <p class="dc-dac-scope">🎯 <strong>Phạm vi tác dụng:</strong> ${hopThap.scope}</p>
+                <p class="dc-dac-desc">${hopThap.desc}</p>
+              </div>
+            ` : `
+              <p class="dc-desc">Hợp Thập là hiện tượng tổng số các sao (Sơn+Vận, Hướng+Vận hoặc Sơn+Hướng) tại các cung đều bằng 10. Trạch bàn hiện tại không đắc toàn bàn Hợp Thập.</p>
+            `}
+          </div>
+        </div>
+
+        <!-- 2. TAM BAN QUÁI (LIÊN CHÂU & XẢO QUÁI) -->
+        <div class="dai-cat-card ${tamBanQuai && tamBanQuai.hasTamBanQuai ? 'card-dac-cach' : 'card-khong-dac'}">
+          <div class="dc-head">
+            <span class="dc-icon">${tamBanQuai && tamBanQuai.hasTamBanQuai ? '💫' : '⚪'}</span>
+            <div class="dc-title-group">
+              <span class="dc-badge">${tamBanQuai && tamBanQuai.hasTamBanQuai ? 'ĐẮC THẾ TRẬN' : 'KHÔNG ĐẮC CÁCH'}</span>
+              <h4 class="dc-title">2. Tam Ban Quái (Khí Mạch Xuyên Suốt)</h4>
+            </div>
+          </div>
+          <div class="dc-body">
+            ${tamBanQuai && tamBanQuai.hasTamBanQuai ? `
+              <div class="dc-dac-box">
+                <strong class="dc-dac-title">🎉 ${tamBanQuai.label}</strong>
+                <p class="dc-dac-desc">${tamBanQuai.desc}</p>
+              </div>
+            ` : `
+              <p class="dc-desc">Tam Ban Quái gồm <em>Liên Châu</em> (3 số liên tiếp 1-2-3, 2-3-4...) hoặc <em>Tam Ban Xảo Quái</em> (1-4-7, 2-5-8, 3-6-9) tại cả 9 cung để tạo ống dẫn khí toàn diện. Trạch bàn hiện tại không đắc Tam Ban Quái.</p>
+            `}
+          </div>
+        </div>
+
+        <!-- 3. THẤT TINH ĐẢ KIẾP (MƯỢN KHÍ TƯƠNG LAI) -->
+        <div class="dai-cat-card ${thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep ? 'card-dac-cach' : 'card-khong-dac'}">
+          <div class="dc-head">
+            <span class="dc-icon">${thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep ? '⚡' : '⚪'}</span>
+            <div class="dc-title-group">
+              <span class="dc-badge">${thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep ? 'ĐẮC THẾ TRẬN' : 'KHÔNG ĐẮC CÁCH'}</span>
+              <h4 class="dc-title">3. Thất Tinh Đả Kiếp (Bí Pháp Cướp Khí Thiên Cơ)</h4>
+            </div>
+          </div>
+          <div class="dc-body">
+            ${thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep ? `
+              <div class="dc-dac-box">
+                <strong class="dc-dac-title">🎉 ${thatTinhDaKiep.label}</strong>
+                <p class="dc-dac-desc">${thatTinhDaKiep.desc}</p>
+                <div class="dc-linked-palaces">
+                  <span class="lp-label">🔗 <strong>Tam giác khí liên kết:</strong></span>
+                  <div class="lp-chips">
+                    ${thatTinhDaKiep.linkedPalaces.map(lp => `
+                      <span class="lp-chip">${lp.dir} (${lp.name}) - Hướng Tinh [${lp.huongStar}]</span>
+                    `).join(' ➔ ')}
+                  </div>
+                </div>
+                <div class="dc-loandau-tip">
+                  🛡️ <strong>${thatTinhDaKiep.loanDauAdvice}</strong>
+                </div>
+              </div>
+            ` : `
+              <p class="dc-desc">Thất Tinh Đả Kiếp yêu cầu điều kiện tiên quyết là <strong>Song Tinh Đáo Hướng</strong> (cả Sơn và Hướng tinh tại đầu hướng đều là sao đương vận Vận ${v}) kết hợp tam giác khí Ly-Chấn-Càn (Đả kiếp thật) hoặc Khảm-Đoài-Tốn (Đả kiếp giả). Trạch bàn hiện tại không đắc cách.</p>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPhanPhucNgamTab(phanPhuc, van) {
+    if (!phanPhuc || (!phanPhuc.hasPhucNgam && !phanPhuc.hasPhanNgam)) {
+      return `
+        <div class="interp-guide-tip">
+          🎯 <strong>Nguyên lý:</strong> Phản Ngâm & Phục Ngâm là đại kỵ trong Huyền Không Phi Tinh. <em>Phục Ngâm</em> là sao Sơn/Hướng trùng khít với số Lạc Thư của cung; <em>Phản Ngâm</em> là sao đối xung (tổng số sao + số cung = 10).
+        </div>
+        <div class="interp-clean-card">
+          <span class="clean-icon">🟢</span>
+          <div class="clean-content">
+            <h4>Tinh Bàn Thanh Thuần - Không Phạm Phản/Phục Ngâm</h4>
+            <p>Toàn bộ 8 cung vị của trạch bàn không bị trùng lặp hoặc đối xung với Địa bàn Lạc Thư. Trường khí lưu chuyển hanh thông, không lo đại kỵ ngầm.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="interp-guide-tip">
+        🎯 <strong>Nguyên lý & Ảnh hưởng:</strong> <em>Phục Ngâm</em> là sao Sơn/Hướng trùng số Lạc Thư; <em>Phản Ngâm</em> là sao đối xung (tổng = 10).<br>
+        • <strong>Sơn tinh phạm:</strong> Chủ về gia đạo lục đục, hao tổn nhân đinh, người trong nhà dễ đau ốm, thị phi.<br>
+        • <strong>Hướng tinh phạm:</strong> Chủ về làm ăn trắc trở, thương trường thất bại, tiêu tán tài lộc, hao tài tốn của.
+      </div>
+
+      ${phanPhuc.isToanBanPhucNgam ? `
+        <div class="interp-alert-box alert-danger">
+          <span class="alert-icon">🚨</span>
+          <div class="alert-content">
+            <strong>CẢNH BÁO: TOÀN BÀN PHỤC NGÂM!</strong> Toàn bộ 8 cung vị đều có sao trùng số Lạc Thư (Sao 5 nhập trung bay thuận). Cực hung nếu không đắc cách ngoại cục.
+          </div>
+        </div>
+      ` : ''}
+
+      ${phanPhuc.isToanBanPhanNgam ? `
+        <div class="interp-alert-box alert-danger">
+          <span class="alert-icon">🚨</span>
+          <div class="alert-content">
+            <strong>CẢNH BÁO: TOÀN BÀN PHẢN NGÂM!</strong> Toàn bộ 8 cung vị đều có sao đối xung Hợp Thập (Sao 5 nhập trung bay nghịch). Khí trường biến động dữ dội.
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="interp-cards-grid">
+        ${phanPhuc.items.map(item => {
+          const isSon = (item.starType === 'Sơn Tinh');
+          let remedyAdvice = '';
+          if (item.isVuong) {
+            remedyAdvice = `🌟 <strong>Đắc cách Vượng Khí:</strong> Sao ${item.star} là Vượng Khí Vận ${van}. Nếu ${isSon ? 'ngoại cục có Sơn/nhà cao che chắn' : 'ngoại cục có Thủy/đường thoáng/minh đường rộng'} $\rightarrow$ Cát hóa hung, không lo hung sát.`;
+          } else {
+            remedyAdvice = `🛡️ <strong>Hóa giải thông quan:</strong> ${isSon ? 'Giữ không gian tĩnh, đặt vật phẩm Ngũ Hành tương sinh thông quan để làm dịu sát khí.' : 'Tránh mở cửa nạp khí động tại cung này, đặt vật phẩm Ngũ Hành thông quan để chuyển hóa năng lượng.'}`;
+          }
+
+          return `
+            <div class="interp-card ${item.isVuong ? 'rate-cat' : 'rate-xau'}">
+              <div class="card-top">
+                <div class="card-loc">
+                  <span class="card-dir-name">${item.dir}</span>
+                  <span class="card-pal-name">(${item.name})</span>
+                </div>
+                <div class="card-stars-tag">${item.starType} [${item.star}]</div>
+                <div class="card-rating-badge">
+                  <span class="rate-dot">${item.isVuong ? '🔵' : '🔴'}</span>
+                  <span class="rate-text">${item.typeLabel}</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="card-desc"><strong>Phạm vi ảnh hưởng:</strong> ${item.scope}.</p>
+                <div class="card-extra-advice">${remedyAdvice}</div>
+              </div>
+              <div class="card-footer-badges">
+                <span class="badge-pill ${item.isVuong ? 'badge-primary' : 'badge-danger'}">${item.typeLabel}</span>
+                <span class="badge-pill ${isSon ? 'badge-pill-son' : 'badge-pill-huong'}">${item.starType}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderNhapTuTab(nhapTu, van) {
+    if (!nhapTu) return '<p>Chưa có dữ liệu Nhập Tù.</p>';
+
+    return `
+      <div class="interp-guide-tip">
+        🎯 <strong>Nguyên lý Lệnh Tinh Nhập Tù:</strong> Một ngôi nhà dù vượng đến đâu, khi sao vượng khí (Lệnh Tinh) bị rơi vào <strong>Trung Cung (Cung số 5)</strong> thì gọi là <em>Nhập Tù</em> (bị giam cầm). Hướng tinh nhập tù $\rightarrow$ <strong>Tài Tù</strong> (tài lộc bế tắc); Sơn tinh nhập tù $\rightarrow$ <strong>Đinh Tù</strong> (nhân đinh suy bại).
+      </div>
+
+      <!-- Trạng thái hiện tại -->
+      <div class="nhap-tu-status-card ${nhapTu.isNhapTuCurrent ? 'status-danger-box' : 'status-good-box'}">
+        <div class="nt-status-header">
+          <span class="nt-status-icon">${nhapTu.isNhapTuCurrent ? '🔒' : '🟢'}</span>
+          <div class="nt-status-info">
+            <span class="nt-status-label">Trạng Thái Vận Hiện Tại (Vận ${van})</span>
+            <h4 class="nt-status-title">${nhapTu.currentTitle}</h4>
+          </div>
+        </div>
+        <p class="nt-status-desc">
+          ${nhapTu.isNhapTuCurrent 
+            ? `Sao Vượng Khí (${van}) đang nằm tại Trung Cung [Sơn: ${nhapTu.sonCenter} | Hướng: ${nhapTu.huongCenter}]. Cần áp dụng giải pháp <em>Giải Tù Quyết</em> bên dưới để khai thông vượng khí.` 
+            : `Sao Vượng Khí Vận ${van} đang phân bổ ở các cung hướng bên ngoài, trạch nhà không bị bế khí.`}
+        </p>
+      </div>
+
+      <!-- Bộ Giải Pháp Giải Tù Quyết -->
+      <div class="nhap-tu-remedies-grid">
+        <div class="nt-remedy-card">
+          <div class="nt-rem-head">
+            <span class="nt-rem-icon">🌊</span>
+            <strong class="nt-rem-title">1. Giải Tù Ngoại Cục (Hướng Thượng Hữu Thủy)</strong>
+          </div>
+          <p class="nt-rem-text">
+            Cổ quyết dạy: <em>"Hướng thượng hữu thủy, tù bất trụ"</em>. Nếu phía trước mặt nhà (đầu hướng) có <strong>ao hồ, sông suối, hồ bơi, hoặc ngã ba ngã tư rộng thoáng (Minh đường tụ thủy)</strong> $\rightarrow$ Động khí của nước và giao lộ sẽ dẫn dắt vượng khí thoát khỏi trung cung, <strong>Giải Tù Thành Công</strong>.
+          </p>
+        </div>
+
+        <div class="nt-remedy-card">
+          <div class="nt-rem-head">
+            <span class="nt-rem-icon">🪜</span>
+            <strong class="nt-rem-title">2. Giải Tù Nội Thất (Động Khí Trung Cung)</strong>
+          </div>
+          <p class="nt-rem-text">
+            Tại khu vực giữa nhà (Trung Cung), thiết kế <strong>Cầu thang thông tầng hoặc Giếng trời lớn</strong> $\rightarrow$ Trục đối lưu không khí thẳng đứng từ dưới đất lên mái nhà làm tiêu tan sự tù hãm, đưa vượng khí lan tỏa khắp các tầng, <strong>Giải Tù Thành Công</strong>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Bảng Dự Báo Nhập Tù 9 Vận -->
+      <div class="nhap-tu-forecast-section">
+        <h4 class="forecast-title">📅 Bảng Dự Báo Vận Nhập Tù Của Trạch Nhà (9 Vận)</h4>
+        <div class="forecast-table-wrapper">
+          <table class="forecast-table">
+            <thead>
+              <tr>
+                <th>Vận</th>
+                <th>Thời Gian</th>
+                <th>Sơn Tinh (Trung Cung)</th>
+                <th>Hướng Tinh (Trung Cung)</th>
+                <th>Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${nhapTu.forecast.map(item => `
+                <tr class="${item.isCurrent ? 'row-current-van' : ''} ${item.statusType === 'danger' ? 'row-danger' : ''}">
+                  <td><strong>Vận ${item.van}</strong> ${item.isCurrent ? '<span class="badge-cur-van">Hiện tại</span>' : ''}</td>
+                  <td>${item.years}</td>
+                  <td><span class="star-pill-son">${nhapTu.sonCenter}</span></td>
+                  <td><span class="star-pill-huong">${nhapTu.huongCenter}</span></td>
+                  <td>
+                    <span class="forecast-status-badge ${item.statusType === 'danger' ? 'badge-danger' : 'badge-success'}">
+                      ${item.status}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </div>
       </div>
     `;

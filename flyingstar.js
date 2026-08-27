@@ -127,13 +127,492 @@ function getOpposite(degree) {
   return findMountain(opp);
 }
 
+// 8 Đại Không Vong boundaries (Ranh giới giữa 8 Quẻ lớn)
+const DAI_KHONG_VONG_BOUNDARIES = [
+  { degree: 22.5,  palaces: 'Khảm (Bắc) / Cấn (Đông Bắc)', name: 'Khảm - Cấn' },
+  { degree: 67.5,  palaces: 'Cấn (Đông Bắc) / Chấn (Đông)', name: 'Cấn - Chấn' },
+  { degree: 112.5, palaces: 'Chấn (Đông) / Tốn (Đông Nam)', name: 'Chấn - Tốn' },
+  { degree: 157.5, palaces: 'Tốn (Đông Nam) / Ly (Nam)', name: 'Tốn - Ly' },
+  { degree: 202.5, palaces: 'Ly (Nam) / Khôn (Tây Nam)', name: 'Ly - Khôn' },
+  { degree: 247.5, palaces: 'Khôn (Tây Nam) / Đoài (Tây)', name: 'Khôn - Đoài' },
+  { degree: 292.5, palaces: 'Đoài (Tây) / Càn (Tây Bắc)', name: 'Đoài - Càn' },
+  { degree: 337.5, palaces: 'Càn (Tây Bắc) / Khảm (Bắc)', name: 'Càn - Khảm' },
+];
+
+// 16 Tiểu Không Vong boundaries (Ranh giới giữa 2 Sơn kề nhau trong cùng 1 Quẻ)
+const TIEU_KHONG_VONG_BOUNDARIES = [
+  { degree: 352.5, mountains: 'Nhâm / Tý', palace: 'Khảm (Bắc)' },
+  { degree: 7.5,   mountains: 'Tý / Quý', palace: 'Khảm (Bắc)' },
+  { degree: 37.5,  mountains: 'Sửu / Cấn', palace: 'Cấn (Đông Bắc)' },
+  { degree: 52.5,  mountains: 'Cấn / Dần', palace: 'Cấn (Đông Bắc)' },
+  { degree: 82.5,  mountains: 'Giáp / Mão', palace: 'Chấn (Đông)' },
+  { degree: 97.5,  mountains: 'Mão / Ất', palace: 'Chấn (Đông)' },
+  { degree: 127.5, mountains: 'Thìn / Tốn', palace: 'Tốn (Đông Nam)' },
+  { degree: 142.5, mountains: 'Tốn / Tỵ', palace: 'Tốn (Đông Nam)' },
+  { degree: 172.5, mountains: 'Bính / Ngọ', palace: 'Ly (Nam)' },
+  { degree: 187.5, mountains: 'Ngọ / Đinh', palace: 'Ly (Nam)' },
+  { degree: 217.5, mountains: 'Mùi / Khôn', palace: 'Khôn (Tây Nam)' },
+  { degree: 232.5, mountains: 'Khôn / Thân', palace: 'Khôn (Tây Nam)' },
+  { degree: 262.5, mountains: 'Canh / Dậu', palace: 'Đoài (Tây)' },
+  { degree: 277.5, mountains: 'Dậu / Tân', palace: 'Đoài (Tây)' },
+  { degree: 307.5, mountains: 'Tuất / Càn', palace: 'Càn (Tây Bắc)' },
+  { degree: 322.5, mountains: 'Càn / Hợi', palace: 'Càn (Tây Bắc)' },
+];
+
 /**
- * Classify the chart type based on deviation from mountain center
+ * Classify the chart type based on deviation from mountain center and facing degree
  */
-function classifyChart(deviation) {
-  if (deviation <= 3) return 'HA_QUAI';      // Chính Hướng
-  if (deviation <= 7) return 'THE_QUAI';     // Kiêm Hướng
-  return 'KHONG_VONG';                        // Không Vong
+function classifyChart(deviation, facingDegree) {
+  if (deviation <= 3.0) {
+    return { type: 'HA_QUAI', label: 'Chính Hướng (Hạ Quái)', isKhongVong: false };
+  }
+  if (deviation <= 5.5) {
+    return { type: 'THE_QUAI', label: 'Kiêm Hướng (Thế Quái)', isKhongVong: false };
+  }
+
+  const deg = typeof facingDegree === 'number' ? ((facingDegree % 360) + 360) % 360 : 0;
+  
+  // Check Đại Không Vong
+  let closestDKV = null;
+  let minDiffDKV = 999;
+  for (const b of DAI_KHONG_VONG_BOUNDARIES) {
+    const diff = degreeDiff(deg, b.degree);
+    if (diff < minDiffDKV) {
+      minDiffDKV = diff;
+      closestDKV = b;
+    }
+  }
+
+  // Check Tiểu Không Vong
+  let closestTKV = null;
+  let minDiffTKV = 999;
+  for (const b of TIEU_KHONG_VONG_BOUNDARIES) {
+    const diff = degreeDiff(deg, b.degree);
+    if (diff < minDiffTKV) {
+      minDiffTKV = diff;
+      closestTKV = b;
+    }
+  }
+
+  if (minDiffDKV <= minDiffTKV) {
+    return {
+      type: 'DAI_KHONG_VONG',
+      label: 'Đại Không Vong',
+      isKhongVong: true,
+      boundary: closestDKV,
+      boundaryType: 'DAI_KHONG_VONG',
+      boundaryDegree: closestDKV ? closestDKV.degree : 0,
+      diff: parseFloat(minDiffDKV.toFixed(2)),
+      desc: `Trục hướng nhà (${deg.toFixed(1)}°) rơi sát đường phân giới Đại Không Vong giữa 2 quẻ ${closestDKV ? closestDKV.palaces : ''} (${closestDKV ? closestDKV.degree : ''}°). Sai lệch chỉ ${minDiffDKV.toFixed(1)}°.`
+    };
+  } else {
+    return {
+      type: 'TIEU_KHONG_VONG',
+      label: 'Tiểu Không Vong',
+      isKhongVong: true,
+      boundary: closestTKV,
+      boundaryType: 'TIEU_KHONG_VONG',
+      boundaryDegree: closestTKV ? closestTKV.degree : 0,
+      diff: parseFloat(minDiffTKV.toFixed(2)),
+      desc: `Trục hướng nhà (${deg.toFixed(1)}°) rơi sát đường phân giới Tiểu Không Vong giữa 2 sơn ${closestTKV ? closestTKV.mountains : ''} (${closestTKV ? closestTKV.palace : ''}, ${closestTKV ? closestTKV.degree : ''}°). Sai lệch chỉ ${minDiffTKV.toFixed(1)}°.`
+    };
+  }
+}
+
+/**
+ * Phân tích Phản Ngâm & Phục Ngâm theo toàn bộ 8 cung và Toàn Bàn
+ */
+function analyzePhanPhucNgam(palaces, van) {
+  if (!palaces) return null;
+
+  const result = {
+    hasPhucNgam: false,
+    hasPhanNgam: false,
+    isToanBanPhucNgam: false,
+    isToanBanPhanNgam: false,
+    sonPhucNgam: [],
+    huongPhucNgam: [],
+    sonPhanNgam: [],
+    huongPhanNgam: [],
+    items: []
+  };
+
+  let countSonPhuc = 0;
+  let countHuongPhuc = 0;
+  let countSonPhan = 0;
+  let countHuongPhan = 0;
+
+  for (let p = 1; p <= 9; p++) {
+    if (p === 5) continue; // 8 outer palaces
+    const pal = palaces[p];
+    if (!pal) continue;
+
+    const son = pal.son;
+    const huong = pal.huong;
+    const pName = pal.palaceName;
+    const pDir = pal.palaceDirection;
+
+    // 1. Phục ngâm: Star == Palace
+    const isSonPhuc = (son === p);
+    const isHuongPhuc = (huong === p);
+
+    if (isSonPhuc) {
+      countSonPhuc++;
+      const isVuong = (son === van);
+      result.sonPhucNgam.push({ palace: p, name: pName, dir: pDir, star: son, isVuong });
+      result.hasPhucNgam = true;
+      result.items.push({
+        palace: p, name: pName, dir: pDir, starType: 'Sơn Tinh', star: son,
+        type: 'PHUC_NGAM', typeLabel: 'Phục Ngâm', isVuong,
+        scope: 'Gia đạo / Sức khỏe / Nhân đinh'
+      });
+    }
+
+    if (isHuongPhuc) {
+      countHuongPhuc++;
+      const isVuong = (huong === van);
+      result.huongPhucNgam.push({ palace: p, name: pName, dir: pDir, star: huong, isVuong });
+      result.hasPhucNgam = true;
+      result.items.push({
+        palace: p, name: pName, dir: pDir, starType: 'Hướng Tinh', star: huong,
+        type: 'PHUC_NGAM', typeLabel: 'Phục Ngâm', isVuong,
+        scope: 'Tài lộc / Kinh doanh / Tiền của'
+      });
+    }
+
+    // 2. Phản ngâm: Star + Palace == 10
+    const isSonPhan = (son + p === 10);
+    const isHuongPhan = (huong + p === 10);
+
+    if (isSonPhan) {
+      countSonPhan++;
+      const isVuong = (son === van);
+      result.sonPhanNgam.push({ palace: p, name: pName, dir: pDir, star: son, isVuong });
+      result.hasPhanNgam = true;
+      result.items.push({
+        palace: p, name: pName, dir: pDir, starType: 'Sơn Tinh', star: son,
+        type: 'PHAN_NGAM', typeLabel: 'Phản Ngâm', isVuong,
+        scope: 'Gia đạo / Sức khỏe / Nhân đinh'
+      });
+    }
+
+    if (isHuongPhan) {
+      countHuongPhan++;
+      const isVuong = (huong === van);
+      result.huongPhanNgam.push({ palace: p, name: pName, dir: pDir, star: huong, isVuong });
+      result.hasPhanNgam = true;
+      result.items.push({
+        palace: p, name: pName, dir: pDir, starType: 'Hướng Tinh', star: huong,
+        type: 'PHAN_NGAM', typeLabel: 'Phản Ngâm', isVuong,
+        scope: 'Tài lộc / Kinh doanh / Tiền của'
+      });
+    }
+  }
+
+  if (countSonPhuc === 8 || countHuongPhuc === 8) result.isToanBanPhucNgam = true;
+  if (countSonPhan === 8 || countHuongPhan === 8) result.isToanBanPhanNgam = true;
+
+  return result;
+}
+
+/**
+ * Phân tích Lệnh Tinh Nhập Tù (Vận hiện tại & Bảng dự báo 9 Vận)
+ */
+function analyzeNhapTu(palaces, currentVan) {
+  if (!palaces || !palaces[5]) return null;
+
+  const centerPal = palaces[5];
+  const sonCenter = centerPal.son;
+  const huongCenter = centerPal.huong;
+  const vanTrach = currentVan || 9;
+
+  // Trạng thái ở Vận hiện tại
+  const isHuongNhapTuCurrent = (huongCenter === vanTrach); // Tài Tù
+  const isSonNhapTuCurrent = (sonCenter === vanTrach);     // Đinh Tù
+
+  // Bảng dự báo cho 9 vận
+  const forecast = [];
+  for (let v = 1; v <= 9; v++) {
+    const range = PERIOD_RANGES.find(r => r.van === v) || { start: (v - 1) * 20 + 1864, end: v * 20 + 1843 };
+    const isTaiTu = (huongCenter === v);
+    const isDinhTu = (sonCenter === v);
+    let statusText = 'Cát Lành (Khí thông suốt)';
+    let statusType = 'good';
+
+    if (isTaiTu && isDinhTu) {
+      statusText = 'Song Tinh Nhập Tù (Đại Hung Bế Khí)';
+      statusType = 'danger';
+    } else if (isTaiTu) {
+      statusText = 'Tài Tù (Hướng Tinh Bị Giam)';
+      statusType = 'danger';
+    } else if (isDinhTu) {
+      statusText = 'Đinh Tù (Sơn Tinh Bị Giam)';
+      statusType = 'danger';
+    }
+
+    forecast.push({
+      van: v,
+      years: `${range.start} - ${range.end}`,
+      isCurrent: (v === vanTrach),
+      isTaiTu,
+      isDinhTu,
+      status: statusText,
+      statusType
+    });
+  }
+
+  let currentTitle = 'Không Bị Nhập Tù';
+  let currentSeverity = 'good';
+  if (isHuongNhapTuCurrent && isSonNhapTuCurrent) {
+    currentTitle = 'Song Tinh Nhập Tù (Đại Kỵ Toàn Diện)';
+    currentSeverity = 'danger';
+  } else if (isHuongNhapTuCurrent) {
+    currentTitle = 'Tài Tù (Tài Lộc Nhập Tù - Tiền Bạc Bế Tắc)';
+    currentSeverity = 'danger';
+  } else if (isSonNhapTuCurrent) {
+    currentTitle = 'Đinh Tù (Nhân Đinh Nhập Tù - Sức Khỏe Gia Đạo Bế Tắc)';
+    currentSeverity = 'danger';
+  }
+
+  return {
+    sonCenter,
+    huongCenter,
+    vanTrach,
+    isHuongNhapTuCurrent,
+    isSonNhapTuCurrent,
+    isNhapTuCurrent: isHuongNhapTuCurrent || isSonNhapTuCurrent,
+    currentTitle,
+    currentSeverity,
+    forecast
+  };
+}
+
+/**
+ * 1. Phép Hợp Thập (Thiên Tâm Thập Đạo)
+ */
+function analyzeHopThap(palaces) {
+  if (!palaces) return null;
+
+  let isSonVan = true;
+  let isHuongVan = true;
+  let isSonHuong = true;
+
+  for (let p = 1; p <= 9; p++) {
+    const pal = palaces[p];
+    if (!pal) continue;
+
+    // Loại 1: Sơn Tinh + Vận Tinh = 10 (8 cung xung quanh trung cung p != 5)
+    if (p !== 5) {
+      if (pal.son + pal.van !== 10) {
+        isSonVan = false;
+      }
+    }
+
+    // Loại 2: Hướng Tinh + Vận Tinh = 10 (8 cung xung quanh trung cung p != 5)
+    if (p !== 5) {
+      if (pal.huong + pal.van !== 10) {
+        isHuongVan = false;
+      }
+    }
+
+    // Loại 3: Sơn Tinh + Hướng Tinh = 10 (tính cả 9 cung kể cả trung cung)
+    if (pal.son + pal.huong !== 10) {
+      isSonHuong = false;
+    }
+  }
+
+  const result = {
+    hasHopThap: (isSonHuong || isSonVan || isHuongVan),
+    isSonHuongHopThap: isSonHuong,
+    isSonVanHopThap: isSonVan,
+    isHuongVanHopThap: isHuongVan,
+    type: null,
+    label: null,
+    scope: null,
+    desc: null
+  };
+
+  if (isSonHuong) {
+    result.type = 'SON_HUONG_HOP_THAP';
+    result.label = 'Toàn Bàn Sơn Hướng Hợp Thập';
+    result.scope = 'Cực Cát Toàn Diện (Vượng Cả Đinh Lẫn Tài)';
+    result.desc = 'Thế trận Thiên Địa Thông Khí tối cao. Tại cả 9 cung (bao gồm Trung Cung), tổng số sao Sơn tinh và Hướng tinh đều hợp thành 10 (Mẫu số Lạc Thư). Chuyển bại thành thắng, vượng phát phúc trạch bền vững.';
+  } else if (isSonVan) {
+    result.type = 'SON_VAN_HOP_THAP';
+    result.label = 'Toàn Bàn Sơn Vận Hợp Thập';
+    result.scope = 'Đại Cát Về Sức Khỏe, Nhân Đinh, Gia Đạo';
+    result.desc = 'Tại 8 cung bát quái xung quanh, tổng số sao Sơn tinh và Vận tinh đều hợp thành 10. Giúp gia đạo êm ấm, sức khỏe dồi dào, nhân đinh hưng vượng, hóa giải mọi hung sát bế khí.';
+  } else if (isHuongVan) {
+    result.type = 'HUONG_VAN_HOP_THAP';
+    result.label = 'Toàn Bàn Hướng Vận Hợp Thập';
+    result.scope = 'Đại Cát Về Tài Lộc, Kinh Doanh, Công Danh';
+    result.desc = 'Tại 8 cung bát quái xung quanh, tổng số sao Hướng tinh và Vận tinh đều hợp thành 10. Kích hoạt dòng chảy tài lộc cực mạnh, buôn bán thuận buồm xuôi gió, công danh thăng tiến nhanh chóng.';
+  }
+
+  return result;
+}
+
+/**
+ * 2. Tam Ban Quái (Liên Châu & Xảo Quái)
+ */
+function analyzeTamBanQuai(palaces) {
+  if (!palaces) return null;
+
+  // Helper so sánh 2 tập hợp 3 số
+  function matchTriad(a, b, c, targetSets) {
+    const sorted = [a, b, c].sort((x, y) => x - y);
+    return targetSets.some(set => {
+      const targetSorted = [...set].sort((x, y) => x - y);
+      return sorted[0] === targetSorted[0] && sorted[1] === targetSorted[1] && sorted[2] === targetSorted[2];
+    });
+  }
+
+  // 9 bộ số Liên Châu (3 số tự nhiên liên tiếp xoay vòng)
+  const LIEN_CHAU_SETS = [
+    [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6], [5, 6, 7],
+    [6, 7, 8], [7, 8, 9], [1, 8, 9], [1, 2, 9]
+  ];
+
+  // 3 bộ số Tam Hợp Xảo Quái
+  const XAO_QUAI_SETS = [
+    [1, 4, 7], [2, 5, 8], [3, 6, 9]
+  ];
+
+  let isLienChau = true;
+  let isXaoQuai = true;
+
+  for (let p = 1; p <= 9; p++) {
+    const pal = palaces[p];
+    if (!pal) continue;
+
+    const s = pal.son;
+    const h = pal.huong;
+    const v = pal.van;
+
+    if (!matchTriad(s, h, v, LIEN_CHAU_SETS)) {
+      isLienChau = false;
+    }
+
+    if (!matchTriad(s, h, v, XAO_QUAI_SETS)) {
+      isXaoQuai = false;
+    }
+  }
+
+  const result = {
+    hasTamBanQuai: (isLienChau || isXaoQuai),
+    isLienChau,
+    isXaoQuai,
+    type: null,
+    label: null,
+    desc: null
+  };
+
+  if (isLienChau) {
+    result.type = 'LIEN_CHAU_TAM_BAN_QUAI';
+    result.label = 'Liên Châu Tam Ban Quái';
+    result.desc = 'Đắc cách Liên Châu Tam Ban Quái vô cùng quý hiếm! Tại toàn bộ 9 cung, tổ hợp 3 sao Sơn - Hướng - Vận đều là 3 số tự nhiên liên tiếp. Khí mạch 9 cung thông suốt liên hoàn, gia đình đời đời hưng vượng.';
+  } else if (isXaoQuai) {
+    result.type = 'TAM_BAN_XAO_QUAI';
+    result.label = 'Tam Ban Xảo Quái (Tam Hợp Quái)';
+    result.desc = 'Đắc cách Tam Ban Xảo Quái (1-4-7, 2-5-8, 3-6-9)! Tạo thành hệ thống ống dẫn khí linh thiêng kết nối toàn bộ ngôi nhà. Dù có phạm cách xấu Thượng Sơn Hạ Thủy thì toàn bàn vẫn thông khí và hóa vượng cực nhanh.';
+  }
+
+  return result;
+}
+
+/**
+ * 3. Thất Tinh Đả Kiếp (Mượn khí thiên cơ tương lai)
+ */
+function analyzeThatTinhDaKiep(palaces, facingPalace, vanTrach) {
+  if (!palaces || !facingPalace || !vanTrach) return null;
+
+  const facingPal = palaces[facingPalace];
+  if (!facingPal) return null;
+
+  // Bước 1: Điều kiện tiên quyết - Song Tinh Đáo Hướng
+  const isSongTinhDaoHuong = (facingPal.son === vanTrach && facingPal.huong === vanTrach);
+
+  const TRIAD_SETS = [
+    [1, 4, 7], [2, 5, 8], [3, 6, 9]
+  ];
+
+  function matchTriad(a, b, c) {
+    const sorted = [a, b, c].sort((x, y) => x - y);
+    return TRIAD_SETS.some(set => {
+      const target = [...set].sort((x, y) => x - y);
+      return sorted[0] === target[0] && sorted[1] === target[1] && sorted[2] === target[2];
+    });
+  }
+
+  let isLyCung = false;
+  let isKhamCung = false;
+  let linkedPalaces = [];
+  let linkedStars = [];
+
+  if (isSongTinhDaoHuong) {
+    // Nhóm A: Ly Cung Đả Kiếp (Ly: 9 - Chấn: 3 - Càn: 6)
+    if ([9, 3, 6].includes(facingPalace)) {
+      if (palaces[9] && palaces[3] && palaces[6]) {
+        const h9 = palaces[9].huong;
+        const h3 = palaces[3].huong;
+        const h6 = palaces[6].huong;
+        if (matchTriad(h9, h3, h6)) {
+          isLyCung = true;
+          linkedPalaces = [
+            { palace: 9, name: 'Ly', dir: 'Nam', huongStar: h9 },
+            { palace: 3, name: 'Chấn', dir: 'Đông', huongStar: h3 },
+            { palace: 6, name: 'Càn', dir: 'Tây Bắc', huongStar: h6 }
+          ];
+          linkedStars = [h9, h3, h6];
+        }
+      }
+    }
+
+    // Nhóm B: Khảm Cung Giả Kiếp (Khảm: 1 - Đoài: 7 - Tốn: 4)
+    if (!isLyCung && [1, 7, 4].includes(facingPalace)) {
+      if (palaces[1] && palaces[7] && palaces[4]) {
+        const h1 = palaces[1].huong;
+        const h7 = palaces[7].huong;
+        const h4 = palaces[4].huong;
+        if (matchTriad(h1, h7, h4)) {
+          isKhamCung = true;
+          linkedPalaces = [
+            { palace: 1, name: 'Khảm', dir: 'Bắc', huongStar: h1 },
+            { palace: 7, name: 'Đoài', dir: 'Tây', huongStar: h7 },
+            { palace: 4, name: 'Tốn', dir: 'Đông Nam', huongStar: h4 }
+          ];
+          linkedStars = [h1, h7, h4];
+        }
+      }
+    }
+  }
+
+  const result = {
+    isSongTinhDaoHuong,
+    hasThatTinhDaKiep: (isLyCung || isKhamCung),
+    isLyCungDaKiep: isLyCung,
+    isKhamCungGiaKiep: isKhamCung,
+    type: null,
+    label: null,
+    linkedPalaces,
+    linkedStars,
+    desc: null,
+    loanDauAdvice: null
+  };
+
+  if (isLyCung) {
+    result.type = 'LY_CUNG_DA_KIEP';
+    result.label = 'Ly Cung Đả Kiếp (Đả Kiếp Thật - Cực Cát)';
+    result.desc = 'Đắc thế trận Ly Cung Đả Kiếp (Tam giác khí Ly 9 - Chấn 3 - Càn 6)! Đây là bí pháp tối thượng mượn khí của tương lai, tài lộc phát triển vượt bậc qua 3 nguyên liên hoàn.';
+    result.loanDauAdvice = 'KÍCH HOẠT LOAN ĐẦU: Ba cung Ly (Nam), Chấn (Đông) và Càn (Tây Bắc) bắt buộc phải mở cửa sổ lớn, cửa đi hoặc giếng trời thông thoáng để tạo luồng khí lưu chuyển liền mạch. Tuyệt đối không để 1 trong 3 cung bị bít kín hoặc đặt nhà vệ sinh/kho rác.';
+  } else if (isKhamCung) {
+    result.type = 'KHAM_CUNG_GIA_KIEP';
+    result.label = 'Khảm Cung Giả Kiếp (Đả Kiếp Giả - Hỗ Trợ Cát)';
+    result.desc = 'Đắc thế trận Khảm Cung Giả Kiếp (Tam giác khí Khảm 1 - Đoài 7 - Tốn 4)! Hỗ trợ nạp thông khí vận tốt, tài lộc ổn định vững vàng.';
+    result.loanDauAdvice = 'KÍCH HOẠT LOAN ĐẦU: Ba cung Khảm (Bắc), Đoài (Tây) và Tốn (Đông Nam) cần thiết kế thoáng đãng, kết nối khí trường thông suốt để kích hoạt công năng mượn khí.';
+  }
+
+  return result;
 }
 
 /**
@@ -451,7 +930,8 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
   const sittingMountain = sittingResult.mountain;
   
   // Step 3: Classify chart type
-  const chartType = classifyChart(deviation);
+  const chartClass = classifyChart(deviation, facingDegree);
+  const chartType = chartClass.type;
   
   // Get San Yuan Long of the house (from the sitting mountain)
   // Tọa and Hướng mountains always share the same san yuan long (they are opposite)
@@ -468,9 +948,8 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
   let sonCenter, huongCenter;
   let kiemInfo = null;
   
-  if (chartType === 'KHONG_VONG') {
-    // Không Vong - still build chart but show warning
-    // Build as Hạ Quái for display
+  if (chartType === 'DAI_KHONG_VONG' || chartType === 'TIEU_KHONG_VONG' || chartType === 'KHONG_VONG') {
+    // Không Vong - still build chart as Hạ Quái for display but attach full warning and advisory
     sonCenter = saoSon;
     const sonForward = getDirection(saoSon, sanYuan, sittingMountain);
     sonBan = buildStarBan(saoSon, sonForward);
@@ -556,6 +1035,20 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
   let degreeMax = facingMountain.center + halfMountain;
   if (degreeMin < 0) degreeMin += 360;
   if (degreeMax >= 360) degreeMax -= 360;
+
+  // Analysis extensions
+  const phanPhucNgam = analyzePhanPhucNgam(palaces, van);
+  const nhapTu = analyzeNhapTu(palaces, van);
+  const hopThap = analyzeHopThap(palaces);
+  const tamBanQuai = analyzeTamBanQuai(palaces);
+  const thatTinhDaKiep = analyzeThatTinhDaKiep(palaces, facingMountain.palace, van);
+
+  const specialFormations = {
+    hopThap,
+    tamBanQuai,
+    thatTinhDaKiep,
+    hasSpecial: (hopThap && hopThap.hasHopThap) || (tamBanQuai && tamBanQuai.hasTamBanQuai) || (thatTinhDaKiep && thatTinhDaKiep.hasThatTinhDaKiep)
+  };
   
   return {
     van,
@@ -565,6 +1058,9 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
     sittingDegree,
     deviation,
     chartType,
+    chartLabel: chartClass.label || 'Chính Hướng (Hạ Quái)',
+    isKhongVong: chartClass.isKhongVong || false,
+    khongVongInfo: chartClass.isKhongVong ? chartClass : null,
     kiemInfo,
     sanYuan,
     palaces,
@@ -572,6 +1068,12 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
     huongCenter,
     annualCenter,
     monthlyCenter,
+    phanPhucNgam,
+    nhapTu,
+    hopThap,
+    tamBanQuai,
+    thatTinhDaKiep,
+    specialFormations,
     degreeRange: { min: degreeMin, max: degreeMax },
   };
 }
@@ -584,6 +1086,14 @@ window.FlyingStar = {
   getMenhQuai,
   getAnnualStar,
   getMonthlyStar,
+  classifyChart,
+  analyzePhanPhucNgam,
+  analyzeNhapTu,
+  analyzeHopThap,
+  analyzeTamBanQuai,
+  analyzeThatTinhDaKiep,
+  DAI_KHONG_VONG_BOUNDARIES,
+  TIEU_KHONG_VONG_BOUNDARIES,
   MOUNTAINS,
   PALACE_NAMES,
   PALACE_DIRECTIONS,
