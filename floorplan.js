@@ -1065,6 +1065,109 @@
     };
   }
 
+  /**
+   * Render signature watermark badge "Nguyễn Khôi" on exported floorplan image.
+   * Auto-scales according to natural image resolution and uses a frosted pill badge
+   * to guarantee legibility on any blueprint background without obscuring house center.
+   */
+  function renderExportSignature(ctx, width, height) {
+    if (!ctx || !width || !height) return;
+
+    ctx.save();
+    try {
+      const baseDim = Math.min(width, height);
+      // Scale proportionally: 1.0 for ~950px, clamped between 0.85 and 3.5
+      const scale = Math.max(0.85, Math.min(baseDim / 950, 3.5));
+
+      const fontSize = Math.round(15 * scale);
+      const iconSize = Math.round(14 * scale);
+      const padX = Math.round(14 * scale);
+      const padY = Math.round(8 * scale);
+      const gap = Math.round(8 * scale);
+      const margin = Math.round(20 * scale);
+
+      ctx.font = `700 ${fontSize}px "Inter", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      const text = 'Nguyễn Khôi';
+      const textMetrics = ctx.measureText(text);
+      const textW = textMetrics.width;
+
+      const badgeW = padX * 2 + iconSize + gap + textW;
+      const badgeH = padY * 2 + Math.max(fontSize, iconSize);
+      const badgeX = width - margin - badgeW;
+      const badgeY = height - margin - badgeH;
+      const radius = badgeH / 2;
+
+      // 1. Draw badge pill shadow
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = Math.round(10 * scale);
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = Math.round(3 * scale);
+
+      // 2. Draw frosted dark pill background
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, radius);
+      } else {
+        ctx.arc(badgeX + radius, badgeY + radius, radius, Math.PI / 2, Math.PI * 1.5);
+        ctx.lineTo(badgeX + badgeW - radius, badgeY);
+        ctx.arc(badgeX + badgeW - radius, badgeY + radius, radius, -Math.PI / 2, Math.PI / 2);
+        ctx.closePath();
+      }
+      ctx.fill();
+
+      // 3. Subtle translucent border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = Math.max(1, Math.round(1.2 * scale));
+      ctx.stroke();
+
+      // Clear shadow for crisp icon and text
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      // 4. Draw vector pen icon
+      const iconX = badgeX + padX;
+      const iconY = badgeY + (badgeH - iconSize) / 2;
+      ctx.save();
+      ctx.translate(iconX, iconY);
+      const iconScale = iconSize / 24;
+      ctx.scale(iconScale, iconScale);
+      ctx.strokeStyle = '#2dd4bf'; // teal accent
+      ctx.fillStyle = 'transparent';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (typeof Path2D !== 'undefined') {
+        const path = new Path2D('M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z');
+        ctx.stroke(path);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(6.5, 21);
+        ctx.lineTo(3, 21);
+        ctx.lineTo(3, 17.5);
+        ctx.lineTo(16.7, 3.7);
+        ctx.lineTo(20.3, 7.3);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 5. Draw signature text "Nguyễn Khôi"
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, badgeX + padX + iconSize + gap, badgeY + badgeH / 2);
+
+    } catch (err) {
+      console.warn('FloorPlan: Error drawing signature:', err);
+    } finally {
+      ctx.restore();
+    }
+  }
+
   function exportFloorplan() {
     if (!floorplanImage || !floorplanImage.src) {
       console.warn('FloorPlan: No image loaded to export');
@@ -1157,6 +1260,9 @@
       ctx.rotate(currentRotation * Math.PI / 180);
       ctx.drawImage(compCanvas, -exportCompassSize / 2, -exportCompassSize / 2, exportCompassSize, exportCompassSize);
       ctx.restore();
+
+      // 5.5. Draw Signature Badge "Nguyễn Khôi" on exported image
+      renderExportSignature(ctx, naturalW, naturalH);
 
       // 6. Save or Share Image immediately (instant synchronous canvas export)
       if (window.saveOrShareImage) {
