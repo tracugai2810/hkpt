@@ -722,18 +722,42 @@ function getKiemInfo(facingDegree, facingMountain) {
 }
 
 /**
- * Calculate Annual Flying Star (Niên Tinh)
- * Formula: Niên Tinh = 9 - ((Y - 1982) % 9)
+ * Resolve hour parameter (either 1..12 Canh Gio or 0..23 solar hour)
+ * into { hourIndex (1..12), solarHour (0..23), solarMinute (0..59) }
  */
-function getSolarTermInfoExact(year, month, day) {
-  const d = new Date(year, month - 1, day);
+function resolveHourInfo(hourParam, minuteParam) {
+  let hourIndex = 1; // 1: Ty ... 12: Hoi
+  let solarHour = 0;
+  let solarMinute = typeof minuteParam === 'number' ? minuteParam : 0;
+
+  if (typeof hourParam === 'number') {
+    if (hourParam >= 1 && hourParam <= 12) {
+      hourIndex = hourParam;
+      solarHour = hourIndex === 1 ? 0 : (hourIndex - 1) * 2;
+    } else if (hourParam >= 0 && hourParam <= 23) {
+      solarHour = hourParam;
+      if (solarHour >= 23 || solarHour < 1) hourIndex = 1;
+      else hourIndex = Math.floor((solarHour + 1) / 2) + 1;
+    }
+  }
+
+  return { hourIndex, solarHour, solarMinute };
+}
+
+/**
+ * Calculate Solar Term Info exact to the hour/minute
+ */
+function getSolarTermInfoExact(year, month, day, solarHour = 12, solarMinute = 0) {
+  const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
   let isYang = true;
   let period = 1;
 
   if (typeof Lunar !== 'undefined') {
     const lunar = Lunar.fromDate(d);
-    const name = lunar.getPrevJieQi(true).getName();
-    if (['冬至', '小寒', '大寒'].includes(name)) period = 1;
+    // getPrevJieQi(false) returns the exact solar term currently in effect at this exact minute
+    const prevJq = lunar.getPrevJieQi(false);
+    const name = prevJq ? prevJq.getName() : '';
+    if (['冬至', '小寒', '大寒', '立春'].includes(name)) period = 1;
     else if (['雨水', '惊蛰', '春分', '清明'].includes(name)) period = 2;
     else if (['谷雨', '立夏', '小满', '芒种'].includes(name)) period = 3;
     else if (['夏至', '小暑', '大暑', '立秋'].includes(name)) { period = 4; isYang = false; }
@@ -751,8 +775,8 @@ function getSolarTermInfoExact(year, month, day) {
   return { period, isYang };
 }
 
-function getDailyStar(year, month, day) {
-  const info = getSolarTermInfoExact(year, month, day);
+function getDailyStar(year, month, day, solarHour = 12, solarMinute = 0) {
+  const info = getSolarTermInfoExact(year, month, day, solarHour, solarMinute);
   
   let baseStar = 1;
   const periodMap = {1:1, 2:7, 3:4, 4:9, 5:3, 6:6};
@@ -774,8 +798,9 @@ function getDailyStar(year, month, day) {
   return { centerStar: nhatTinh, isForward: info.isYang };
 }
 
-function getHourlyStar(year, month, day, hourIndex) {
-  const info = getSolarTermInfoExact(year, month, day);
+function getHourlyStar(year, month, day, hourParam, minuteParam = 0) {
+  const { hourIndex, solarHour, solarMinute } = resolveHourInfo(hourParam, minuteParam);
+  const info = getSolarTermInfoExact(year, month, day, solarHour, solarMinute);
   
   const giapTy = new Date(2024, 2, 1);
   const d = new Date(year, month - 1, day);
@@ -859,20 +884,39 @@ function getMenhQuai(year, gender) {
   return { number: resultNum, quai: quai, element: element };
 }
 
-function getAnnualStar(year, month, day) {
-  let effectiveYear = year;
-  let isAfterLichun = false;
-  
+/**
+ * Calculate effective solar year based on LiChun transition down to exact hour/minute
+ */
+function getEffectiveYear(year, month, day, solarHour = 12, solarMinute = 0) {
+  const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
   if (typeof Lunar !== 'undefined') {
-    const d = new Date(year, month - 1, day);
     const bazi = Lunar.fromDate(d).getEightChar();
-    // In bazi, if year ganZhi matched the actual lunar year we are good, but Lặp Xuân gives next year's bazi early.
-    // Instead, just roughly check LiChun (around Feb 4th)
+    const baziYearZhi = bazi.getYearZhi();
+    const ZHI_ORDER = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const currentYearZhiIndex = ((year - 4) % 12 + 12) % 12;
+    const baziZhiIndex = ZHI_ORDER.indexOf(baziYearZhi);
+    
+    // In Jan/Feb (months 1 and 2), if bazi year branch is previous year's branch, it's before LiChun
+    if (month <= 2) {
+      const prevYearZhiIndex = (currentYearZhiIndex - 1 + 12) % 12;
+      if (baziZhiIndex === prevYearZhiIndex) return year - 1;
+    }
+    // In late December, if already after LiChun (rare leap edge)
+    if (month === 12) {
+      const nextYearZhiIndex = (currentYearZhiIndex + 1) % 12;
+      if (baziZhiIndex === nextYearZhiIndex) return year + 1;
+    }
+    return year;
   }
-  
+  // Fallback
   if (month === 1 || (month === 2 && day < 4)) {
-    effectiveYear = year - 1;
+    return year - 1;
   }
+  return year;
+}
+
+function getAnnualStar(year, month, day, solarHour = 12, solarMinute = 0) {
+  const effectiveYear = getEffectiveYear(year, month, day, solarHour, solarMinute);
   
   let remainder = (effectiveYear - 1982) % 9;
   if (remainder < 0) remainder += 9;
@@ -882,11 +926,12 @@ function getAnnualStar(year, month, day) {
   return { star, effectiveYear };
 }
 
-function getMonthlyStar(effectiveYear, year, month, day) {
+function getMonthlyStar(effectiveYear, year, month, day, solarHour = 12, solarMinute = 0) {
   let chineseMonth = month === 1 ? 12 : month - 1;
 
   if (typeof Lunar !== 'undefined') {
-    const bazi = Lunar.fromDate(new Date(year, month - 1, day)).getEightChar();
+    const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
+    const bazi = Lunar.fromDate(d).getEightChar();
     const zhi = bazi.getMonthZhi();
     const zhiToMonth = {'寅':1, '卯':2, '辰':3, '巳':4, '午':5, '未':6, '申':7, '酉':8, '戌':9, '亥':10, '子':11, '丑':12};
     if (zhiToMonth[zhi]) chineseMonth = zhiToMonth[zhi];
@@ -913,7 +958,7 @@ function buildOverlayChart(centerStar) {
   return buildStarBan(centerStar, true);
 }
 
-function calculateChart(year, facingDegree, currentYear, currentMonth, currentDay, currentHour) {
+function calculateChart(year, facingDegree, currentYear, currentMonth, currentDay, currentHour, currentMinute = 0) {
   // Parse degree
   facingDegree = ((facingDegree % 360) + 360) % 360;
   
@@ -994,22 +1039,24 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
   let nhatBan = null, thoiBan = null;
   let annualCenter = null, monthlyCenter = null;
   
+  const { hourIndex, solarHour, solarMinute } = resolveHourInfo(currentHour, currentMinute);
+
   if (currentYear) {
-    const annualResult = getAnnualStar(currentYear, currentMonth, currentDay || 15);
+    const annualResult = getAnnualStar(currentYear, currentMonth, currentDay || 15, solarHour, solarMinute);
     annualCenter = annualResult.star;
     annualBan = buildOverlayChart(annualCenter);
     
     if (currentMonth) {
-      monthlyCenter = getMonthlyStar(annualResult.effectiveYear, currentYear, currentMonth, currentDay || 15);
+      monthlyCenter = getMonthlyStar(annualResult.effectiveYear, currentYear, currentMonth, currentDay || 15, solarHour, solarMinute);
       monthlyBan = buildOverlayChart(monthlyCenter);
     }
   }
 
   if (currentYear && currentMonth && currentDay && currentHour) {
-    const dailyResult = getDailyStar(currentYear, currentMonth, currentDay);
+    const dailyResult = getDailyStar(currentYear, currentMonth, currentDay, solarHour, solarMinute);
     nhatBan = buildStarBan(dailyResult.centerStar, dailyResult.isForward);
     
-    const hourlyResult = getHourlyStar(currentYear, currentMonth, currentDay, currentHour);
+    const hourlyResult = getHourlyStar(currentYear, currentMonth, currentDay, hourIndex, solarMinute);
     thoiBan = buildStarBan(hourlyResult.centerStar, hourlyResult.isForward);
   }
   

@@ -214,11 +214,21 @@
       let currentHour = parseInt(inputCurrentHour.value, 10);
       if (isNaN(currentHour) || currentHour < 1 || currentHour > 12) currentHour = 1;
 
+      // If viewing current date and selected hour matches current real-time canh gio, use real-time minutes
+      let currentMinute = 0;
+      if (currentYear === now.getFullYear() && currentMonth === (now.getMonth() + 1) && currentDay === now.getDate()) {
+        const nowH = now.getHours();
+        let nowCanh = (nowH >= 23 || nowH < 1) ? 1 : Math.floor((nowH + 1) / 2) + 1;
+        if (currentHour === nowCanh) {
+          currentMinute = now.getMinutes();
+        }
+      }
+
       const ownerYear = parseInt(inputOwnerYear ? inputOwnerYear.value : '', 10);
       const ownerGender = parseInt(inputOwnerGender ? inputOwnerGender.value : '1', 10);
       
       // Calculate
-      const result = FlyingStar.calculateChart(year, degree, currentYear, currentMonth, currentDay, currentHour);
+      const result = FlyingStar.calculateChart(year, degree, currentYear, currentMonth, currentDay, currentHour, currentMinute);
       currentResult = result; // Save to global
       window._currentChartResult = result; // Expose for FloorPlan module
       
