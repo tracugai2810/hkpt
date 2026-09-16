@@ -19,10 +19,9 @@
   let inputDegree;
   let inputYear;
   let inputVan;
-  let inputCurrentYear;
-  let inputCurrentMonth;
-  let inputCurrentDay;
-  let inputCurrentHour;
+  let inputCurrentDateTime;
+  let badgeCanhGio;
+  let badgeTietKhi;
   let inputOwnerYear;
   let inputOwnerGender;
   let btnCalculate;
@@ -43,34 +42,110 @@
   
   let currentResult = null; // Store result for copy functionality
 
+  function formatDateTimeLocal(d) {
+    const pad = n => String(n).padStart(2, '0');
+    const y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const h = pad(d.getHours());
+    const min = pad(d.getMinutes());
+    return `${y}-${m}-${day}T${h}:${min}`;
+  }
+
+  function parseCurrentDateTime() {
+    inputCurrentDateTime = inputCurrentDateTime || document.getElementById('inputCurrentDateTime');
+    const now = new Date();
+    if (!inputCurrentDateTime || !inputCurrentDateTime.value) {
+      return {
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
+        day: now.getDate(),
+        hour: now.getHours(),
+        minute: now.getMinutes(),
+        rawDate: now
+      };
+    }
+    const val = inputCurrentDateTime.value.trim();
+    const parts = val.split('T');
+    let year = now.getFullYear(), month = now.getMonth() + 1, day = now.getDate();
+    let hour = now.getHours(), minute = now.getMinutes();
+    if (parts[0]) {
+      const dParts = parts[0].split('-');
+      if (dParts.length === 3) {
+        year = parseInt(dParts[0], 10) || year;
+        month = parseInt(dParts[1], 10) || month;
+        day = parseInt(dParts[2], 10) || day;
+      }
+    }
+    if (parts[1]) {
+      const tParts = parts[1].split(':');
+      if (tParts.length >= 2) {
+        hour = parseInt(tParts[0], 10);
+        minute = parseInt(tParts[1], 10);
+        if (isNaN(hour)) hour = 8;
+        if (isNaN(minute)) minute = 0;
+      }
+    }
+    return {
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      rawDate: new Date(year, month - 1, day, hour, minute, 0)
+    };
+  }
+
+  function updateDateTimeBadges() {
+    const { year, month, day, hour, minute } = parseCurrentDateTime();
+    badgeCanhGio = badgeCanhGio || document.getElementById('badgeCanhGio');
+    badgeTietKhi = badgeTietKhi || document.getElementById('badgeTietKhi');
+
+    // 1. Canh Gio calculation
+    let hourIdx = 1;
+    if (hour >= 23 || hour < 1) hourIdx = 1;
+    else hourIdx = Math.floor((hour + 1) / 2) + 1;
+
+    const canhNames = [
+      '',
+      'Giờ Tý (23:00 - 00:59)',
+      'Giờ Sửu (01:00 - 02:59)',
+      'Giờ Dần (03:00 - 04:59)',
+      'Giờ Mão (05:00 - 06:59)',
+      'Giờ Thìn (07:00 - 08:59)',
+      'Giờ Tỵ (09:00 - 10:59)',
+      'Giờ Ngọ (11:00 - 12:59)',
+      'Giờ Mùi (13:00 - 14:59)',
+      'Giờ Thân (15:00 - 16:59)',
+      'Giờ Dậu (17:00 - 18:59)',
+      'Giờ Tuất (19:00 - 20:59)',
+      'Giờ Hợi (21:00 - 22:59)'
+    ];
+
+    if (badgeCanhGio) {
+      badgeCanhGio.textContent = `🕒 ${canhNames[hourIdx] || 'Giờ Tý'}`;
+    }
+
+    // 2. Solar Term calculation exact to the minute
+    if (badgeTietKhi && window.FlyingStar && window.FlyingStar.getSolarTermDetails) {
+      try {
+        const details = window.FlyingStar.getSolarTermDetails(year, month, day, hour, minute);
+        const termName = details.termName || details.rawName || 'Tiết Khí';
+        badgeTietKhi.textContent = `🌿 Tiết ${termName} (${details.donType} - Vận ${details.period})`;
+      } catch (e) {
+        console.warn('Tiet khi badge calculation error:', e);
+      }
+    }
+  }
+
   // Set current real-time survey date & hour
   function setCurrentTime() {
-    const now = new Date();
-    inputCurrentYear = inputCurrentYear || document.getElementById('inputCurrentYear');
-    inputCurrentMonth = inputCurrentMonth || document.getElementById('inputCurrentMonth');
-    inputCurrentDay = inputCurrentDay || document.getElementById('inputCurrentDay');
-    inputCurrentHour = inputCurrentHour || document.getElementById('inputCurrentHour');
-
-    if (inputCurrentYear) inputCurrentYear.value = now.getFullYear();
-    if (inputCurrentMonth) inputCurrentMonth.value = now.getMonth() + 1;
-    if (inputCurrentDay) inputCurrentDay.value = now.getDate();
-    
-    // Calculate 12 Can Chi hours: Tý=1, Sửu=2...
-    const h = now.getHours();
-    let hourIdx = 1;
-    if (h >= 23 || h < 1) hourIdx = 1;
-    else if (h >= 1 && h < 3) hourIdx = 2;
-    else if (h >= 3 && h < 5) hourIdx = 3;
-    else if (h >= 5 && h < 7) hourIdx = 4;
-    else if (h >= 7 && h < 9) hourIdx = 5;
-    else if (h >= 9 && h < 11) hourIdx = 6;
-    else if (h >= 11 && h < 13) hourIdx = 7;
-    else if (h >= 13 && h < 15) hourIdx = 8;
-    else if (h >= 15 && h < 17) hourIdx = 9;
-    else if (h >= 17 && h < 19) hourIdx = 10;
-    else if (h >= 19 && h < 21) hourIdx = 11;
-    else if (h >= 21 && h < 23) hourIdx = 12;
-    if (inputCurrentHour) inputCurrentHour.value = hourIdx;
+    inputCurrentDateTime = inputCurrentDateTime || document.getElementById('inputCurrentDateTime');
+    if (inputCurrentDateTime) {
+      const now = new Date();
+      inputCurrentDateTime.value = formatDateTimeLocal(now);
+      updateDateTimeBadges();
+    }
   }
 
   // Initialize
@@ -79,10 +154,9 @@
     inputDegree = document.getElementById('inputDegree');
     inputYear = document.getElementById('inputYear');
     inputVan = document.getElementById('inputVan');
-    inputCurrentYear = document.getElementById('inputCurrentYear');
-    inputCurrentMonth = document.getElementById('inputCurrentMonth');
-    inputCurrentDay = document.getElementById('inputCurrentDay');
-    inputCurrentHour = document.getElementById('inputCurrentHour');
+    inputCurrentDateTime = document.getElementById('inputCurrentDateTime');
+    badgeCanhGio = document.getElementById('badgeCanhGio');
+    badgeTietKhi = document.getElementById('badgeTietKhi');
     inputOwnerYear = document.getElementById('inputOwnerYear');
     inputOwnerGender = document.getElementById('inputOwnerGender');
     btnCalculate = document.getElementById('btnCalculate');
@@ -103,6 +177,12 @@
 
     // Set real-time survey date/time automatically
     setCurrentTime();
+
+    // Listen to changes on inputCurrentDateTime to immediately update badges
+    if (inputCurrentDateTime) {
+      inputCurrentDateTime.addEventListener('input', updateDateTimeBadges);
+      inputCurrentDateTime.addEventListener('change', updateDateTimeBadges);
+    }
     
     // Auto-calculate Van on any input/change/keyup/paste/blur
     if (inputYear) {
@@ -197,38 +277,22 @@
         inputVan.value = currentVan;
       }
 
-      const now = new Date();
-      let currentYear = parseInt(inputCurrentYear.value, 10);
-      if (isNaN(currentYear)) currentYear = now.getFullYear();
+      const dt = parseCurrentDateTime();
+      const currentYear = dt.year;
+      const currentMonth = dt.month;
+      const currentDay = dt.day;
+      const exactHour = dt.hour;
+      const exactMinute = dt.minute;
 
-      let currentMonth = parseInt(inputCurrentMonth.value, 10);
-      if (isNaN(currentMonth) || currentMonth < 1 || currentMonth > 12) currentMonth = now.getMonth() + 1;
-
-      let currentDay = parseInt(inputCurrentDay.value, 10);
-      if (isNaN(currentDay) || currentDay < 1) currentDay = 1;
-      if (currentDay > 31) {
-        currentDay = 26; // Sanitized from typos like 261
-        inputCurrentDay.value = 26;
-      }
-
-      let currentHour = parseInt(inputCurrentHour.value, 10);
-      if (isNaN(currentHour) || currentHour < 1 || currentHour > 12) currentHour = 1;
-
-      // If viewing current date and selected hour matches current real-time canh gio, use real-time minutes
-      let currentMinute = 0;
-      if (currentYear === now.getFullYear() && currentMonth === (now.getMonth() + 1) && currentDay === now.getDate()) {
-        const nowH = now.getHours();
-        let nowCanh = (nowH >= 23 || nowH < 1) ? 1 : Math.floor((nowH + 1) / 2) + 1;
-        if (currentHour === nowCanh) {
-          currentMinute = now.getMinutes();
-        }
-      }
+      let currentCanh = 1;
+      if (exactHour >= 23 || exactHour < 1) currentCanh = 1;
+      else currentCanh = Math.floor((exactHour + 1) / 2) + 1;
 
       const ownerYear = parseInt(inputOwnerYear ? inputOwnerYear.value : '', 10);
       const ownerGender = parseInt(inputOwnerGender ? inputOwnerGender.value : '1', 10);
       
       // Calculate
-      const result = FlyingStar.calculateChart(year, degree, currentYear, currentMonth, currentDay, currentHour, currentMinute);
+      const result = FlyingStar.calculateChart(year, degree, currentYear, currentMonth, currentDay, exactHour, exactMinute, currentCanh);
       currentResult = result; // Save to global
       window._currentChartResult = result; // Expose for FloorPlan module
       
@@ -240,7 +304,7 @@
       }
       
       // Display
-      renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai);
+      renderResult(result, currentYear, currentMonth, currentDay, currentCanh, menhQuai, exactHour, exactMinute);
 
       if (shouldScroll && exportArea) {
         setTimeout(() => {
@@ -252,7 +316,7 @@
     }
   }
 
-  function renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai) {
+  function renderResult(result, currentYear, currentMonth, currentDay, currentHour, menhQuai, exactHour, exactMinute) {
     if (!result) return;
     if (imageResultContainer) imageResultContainer.classList.add('hidden');
     
@@ -457,7 +521,13 @@
     
     const hourmap = {1:'Tý', 2:'Sửu', 3:'Dần', 4:'Mão', 5:'Thìn', 6:'Tỵ', 7:'Ngọ', 8:'Mùi', 9:'Thân', 10:'Dậu', 11:'Tuất', 12:'Hợi'};
     const infoHour = document.getElementById('infoHour');
-    if (infoHour) infoHour.textContent = hourmap[currentHour] || '-';
+    if (infoHour) {
+      const pad = n => String(n).padStart(2, '0');
+      const timeStr = (exactHour !== undefined && exactMinute !== undefined && !isNaN(exactHour) && !isNaN(exactMinute))
+        ? `${pad(exactHour)}:${pad(exactMinute)}`
+        : '';
+      infoHour.textContent = timeStr ? `${hourmap[currentHour] || '-'} (${timeStr})` : (hourmap[currentHour] || '-');
+    }
 
     // Render Loan Dau (Exterior landscape) recommendation
     try {

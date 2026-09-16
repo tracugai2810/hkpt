@@ -722,26 +722,79 @@ function getKiemInfo(facingDegree, facingMountain) {
 }
 
 /**
- * Resolve hour parameter (either 1..12 Canh Gio or 0..23 solar hour)
- * into { hourIndex (1..12), solarHour (0..23), solarMinute (0..59) }
+ * Resolve hour parameter into { hourIndex (1..12 Canh Gio), solarHour (0..23), solarMinute (0..59) }
  */
-function resolveHourInfo(hourParam, minuteParam) {
-  let hourIndex = 1; // 1: Ty ... 12: Hoi
-  let solarHour = 0;
-  let solarMinute = typeof minuteParam === 'number' ? minuteParam : 0;
+function resolveHourAndSolarTime(hourParam, minuteParam, canhParam) {
+  let solarHour = 12;
+  let solarMinute = (typeof minuteParam === 'number' && !isNaN(minuteParam)) ? minuteParam : 0;
+  let hourIndex = 1;
 
-  if (typeof hourParam === 'number') {
-    if (hourParam >= 1 && hourParam <= 12) {
-      hourIndex = hourParam;
-      solarHour = hourIndex === 1 ? 0 : (hourIndex - 1) * 2;
-    } else if (hourParam >= 0 && hourParam <= 23) {
-      solarHour = hourParam;
+  if (typeof canhParam === 'number' && canhParam >= 1 && canhParam <= 12) {
+    hourIndex = canhParam;
+  }
+
+  if (typeof hourParam === 'number' && !isNaN(hourParam)) {
+    solarHour = hourParam;
+    if (typeof canhParam !== 'number' || isNaN(canhParam)) {
       if (solarHour >= 23 || solarHour < 1) hourIndex = 1;
       else hourIndex = Math.floor((solarHour + 1) / 2) + 1;
     }
   }
 
   return { hourIndex, solarHour, solarMinute };
+}
+
+// Backward-compatibility alias
+const resolveHourInfo = resolveHourAndSolarTime;
+
+const SOLAR_TERM_NAMES_VI = {
+  '冬至': 'Đông Chí', '小寒': 'Tiểu Hàn', '大寒': 'Đại Hàn', '立春': 'Lập Xuân',
+  '雨水': 'Vũ Thủy', '惊蛰': 'Kinh Trập', '春分': 'Xuân Phân', '清明': 'Thanh Minh',
+  '谷雨': 'Cốc Vũ', '立夏': 'Lập Hạ', '小满': 'Tiểu Mãn', '芒种': 'Mang Chủng',
+  '夏至': 'Hạ Chí', '小暑': 'Tiểu Thử', '大暑': 'Đại Thử', '立秋': 'Lập Thu',
+  '处暑': 'Xử Thử', '白露': 'Bạch Lộ', '秋分': 'Thu Phân', '寒露': 'Hàn Lộ',
+  '霜降': 'Sương Giáng', '立冬': 'Lập Đông', '小雪': 'Tiểu Tuyết', '大雪': 'Đại Tuyết'
+};
+
+const CANH_GIO_NAMES_VI = [
+  '',
+  'Tý (23:00 - 00:59)',
+  'Sửu (01:00 - 02:59)',
+  'Dần (03:00 - 04:59)',
+  'Mão (05:00 - 06:59)',
+  'Thìn (07:00 - 08:59)',
+  'Tỵ (09:00 - 10:59)',
+  'Ngọ (11:00 - 12:59)',
+  'Mùi (13:00 - 14:59)',
+  'Thân (15:00 - 16:59)',
+  'Dậu (17:00 - 18:59)',
+  'Tuất (19:00 - 20:59)',
+  'Hợi (21:00 - 22:59)'
+];
+
+/**
+ * Get full solar term details and Vietnamese naming
+ */
+function getSolarTermDetails(year, month, day, solarHour = 12, solarMinute = 0) {
+  const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
+  const info = getSolarTermInfoExact(year, month, day, solarHour, solarMinute);
+  let termNameVi = '';
+  let rawName = '';
+  if (typeof Lunar !== 'undefined') {
+    const lunar = Lunar.fromDate(d);
+    const prevJq = lunar.getPrevJieQi(false);
+    if (prevJq) {
+      rawName = prevJq.getName();
+      termNameVi = SOLAR_TERM_NAMES_VI[rawName] || rawName;
+    }
+  }
+  return {
+    period: info.period,
+    isYang: info.isYang,
+    termName: termNameVi,
+    rawName: rawName,
+    donType: info.isYang ? 'Dương Độn' : 'Âm Độn'
+  };
 }
 
 /**
@@ -798,8 +851,8 @@ function getDailyStar(year, month, day, solarHour = 12, solarMinute = 0) {
   return { centerStar: nhatTinh, isForward: info.isYang };
 }
 
-function getHourlyStar(year, month, day, hourParam, minuteParam = 0) {
-  const { hourIndex, solarHour, solarMinute } = resolveHourInfo(hourParam, minuteParam);
+function getHourlyStar(year, month, day, hourParam, minuteParam = 0, canhParam) {
+  const { hourIndex, solarHour, solarMinute } = resolveHourAndSolarTime(hourParam, minuteParam, canhParam);
   const info = getSolarTermInfoExact(year, month, day, solarHour, solarMinute);
   
   const giapTy = new Date(2024, 2, 1);
@@ -821,7 +874,7 @@ function getHourlyStar(year, month, day, hourParam, minuteParam = 0) {
     thoiTinh = baseStar - (hourIndex - 1);
     thoiTinh = ((thoiTinh - 1) % 9 + 9) % 9 + 1;
   }
-  return { centerStar: thoiTinh, isForward: info.isYang };
+  return { centerStar: thoiTinh, isForward: info.isYang, hourIndex };
 }
 
 function getMenhQuai(year, gender) {
@@ -958,7 +1011,7 @@ function buildOverlayChart(centerStar) {
   return buildStarBan(centerStar, true);
 }
 
-function calculateChart(year, facingDegree, currentYear, currentMonth, currentDay, currentHour, currentMinute = 0) {
+function calculateChart(year, facingDegree, currentYear, currentMonth, currentDay, currentHour, currentMinute = 0, currentCanh) {
   // Parse degree
   facingDegree = ((facingDegree % 360) + 360) % 360;
   
@@ -1039,7 +1092,7 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
   let nhatBan = null, thoiBan = null;
   let annualCenter = null, monthlyCenter = null;
   
-  const { hourIndex, solarHour, solarMinute } = resolveHourInfo(currentHour, currentMinute);
+  const { hourIndex, solarHour, solarMinute } = resolveHourAndSolarTime(currentHour, currentMinute, currentCanh);
 
   if (currentYear) {
     const annualResult = getAnnualStar(currentYear, currentMonth, currentDay || 15, solarHour, solarMinute);
@@ -1052,11 +1105,11 @@ function calculateChart(year, facingDegree, currentYear, currentMonth, currentDa
     }
   }
 
-  if (currentYear && currentMonth && currentDay && currentHour) {
+  if (currentYear && currentMonth && currentDay && (currentHour !== undefined && currentHour !== null && currentHour !== '')) {
     const dailyResult = getDailyStar(currentYear, currentMonth, currentDay, solarHour, solarMinute);
     nhatBan = buildStarBan(dailyResult.centerStar, dailyResult.isForward);
     
-    const hourlyResult = getHourlyStar(currentYear, currentMonth, currentDay, hourIndex, solarMinute);
+    const hourlyResult = getHourlyStar(currentYear, currentMonth, currentDay, solarHour, solarMinute, hourIndex);
     thoiBan = buildStarBan(hourlyResult.centerStar, hourlyResult.isForward);
   }
   
@@ -1133,6 +1186,12 @@ window.FlyingStar = {
   getMenhQuai,
   getAnnualStar,
   getMonthlyStar,
+  getDailyStar,
+  getHourlyStar,
+  getSolarTermInfoExact,
+  getSolarTermDetails,
+  resolveHourAndSolarTime,
+  resolveHourInfo,
   classifyChart,
   analyzePhanPhucNgam,
   analyzeNhapTu,

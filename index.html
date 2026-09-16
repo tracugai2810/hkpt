@@ -75,54 +75,20 @@
           </div>
         </div>
 
-        <!-- Section 3: Thời Điểm Xem (Dương Lịch) -->
+        <!-- Section 3: Thời Điểm Khảo Sát (Dương Lịch) -->
         <div class="form-block">
           <div class="form-block-title">
             <span class="block-num">3</span>
             <span>Thời Điểm Khảo Sát (Dương Lịch)</span>
           </div>
-          <div class="input-grid grid-datetime">
+          <div class="survey-datetime-wrap">
             <div class="input-group">
-              <label for="inputCurrentYear">Năm</label>
-              <input type="text" id="inputCurrentYear" value="2026" class="input-field" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+              <label for="inputCurrentDateTime">Thời gian khảo sát (Dương lịch)</label>
+              <input type="datetime-local" id="inputCurrentDateTime" class="input-field input-datetime-local" step="60">
             </div>
-            <div class="input-group">
-              <label for="inputCurrentMonth">Tháng</label>
-              <select id="inputCurrentMonth" class="input-field">
-                <option value="1">Tháng 1</option>
-                <option value="2">Tháng 2</option>
-                <option value="3">Tháng 3</option>
-                <option value="4">Tháng 4</option>
-                <option value="5">Tháng 5</option>
-                <option value="6">Tháng 6</option>
-                <option value="7">Tháng 7</option>
-                <option value="8" selected>Tháng 8</option>
-                <option value="9">Tháng 9</option>
-                <option value="10">Tháng 10</option>
-                <option value="11">Tháng 11</option>
-                <option value="12">Tháng 12</option>
-              </select>
-            </div>
-            <div class="input-group">
-              <label for="inputCurrentDay">Ngày</label>
-              <input type="text" id="inputCurrentDay" value="26" class="input-field" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            </div>
-            <div class="input-group">
-              <label for="inputCurrentHour">Giờ Xem</label>
-              <select id="inputCurrentHour" class="input-field">
-                <option value="1">Tý (23:00 - 0:59)</option>
-                <option value="2">Sửu (1:00 - 2:59)</option>
-                <option value="3">Dần (3:00 - 4:59)</option>
-                <option value="4">Mão (5:00 - 6:59)</option>
-                <option value="5">Thìn (7:00 - 8:59)</option>
-                <option value="6" selected>Tỵ (9:00 - 10:59)</option>
-                <option value="7">Ngọ (11:00 - 12:59)</option>
-                <option value="8">Mùi (13:00 - 14:59)</option>
-                <option value="9">Thân (15:00 - 16:59)</option>
-                <option value="10">Dậu (17:00 - 18:59)</option>
-                <option value="11">Tuất (19:00 - 20:59)</option>
-                <option value="12">Hợi (21:00 - 22:59)</option>
-              </select>
+            <div class="datetime-meta-info" id="datetimeMetaInfo">
+              <span class="meta-badge badge-canh" id="badgeCanhGio" title="Canh Giờ Âm Dương">🕒 Giờ Thìn (07:00 - 08:59)</span>
+              <span class="meta-badge badge-tiet" id="badgeTietKhi" title="Tiết Khí Thiên Văn Chính Xác">🌿 Tiết Khí: Đang tính...</span>
             </div>
           </div>
         </div>
