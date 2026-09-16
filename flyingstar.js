@@ -773,15 +773,25 @@ const CANH_GIO_NAMES_VI = [
 ];
 
 /**
+ * Create a Lunar instance adjusted for Vietnam Standard Time (ICT, UTC+7).
+ * lunar-javascript internal astronomical algorithms are referenced to Beijing Civil Time (CST, UTC+8).
+ * Adding 1 hour maps Vietnam local time (UTC+7) to the exact astronomical solar longitude.
+ * Using second = 30 centers the minute interval [minute:00 .. minute:59] accurately.
+ */
+function getLunarForVnTime(year, month, day, solarHour = 12, solarMinute = 0, second = 30) {
+  const d = new Date(year, month - 1, day, solarHour + 1, solarMinute, second);
+  return Lunar.fromDate(d);
+}
+
+/**
  * Get full solar term details and Vietnamese naming
  */
 function getSolarTermDetails(year, month, day, solarHour = 12, solarMinute = 0) {
-  const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
   const info = getSolarTermInfoExact(year, month, day, solarHour, solarMinute);
   let termNameVi = '';
   let rawName = '';
   if (typeof Lunar !== 'undefined') {
-    const lunar = Lunar.fromDate(d);
+    const lunar = getLunarForVnTime(year, month, day, solarHour, solarMinute);
     const prevJq = lunar.getPrevJieQi(false);
     if (prevJq) {
       rawName = prevJq.getName();
@@ -801,12 +811,11 @@ function getSolarTermDetails(year, month, day, solarHour = 12, solarMinute = 0) 
  * Calculate Solar Term Info exact to the hour/minute
  */
 function getSolarTermInfoExact(year, month, day, solarHour = 12, solarMinute = 0) {
-  const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
   let isYang = true;
   let period = 1;
 
   if (typeof Lunar !== 'undefined') {
-    const lunar = Lunar.fromDate(d);
+    const lunar = getLunarForVnTime(year, month, day, solarHour, solarMinute);
     // getPrevJieQi(false) returns the exact solar term currently in effect at this exact minute
     const prevJq = lunar.getPrevJieQi(false);
     const name = prevJq ? prevJq.getName() : '';
@@ -941,9 +950,8 @@ function getMenhQuai(year, gender) {
  * Calculate effective solar year based on LiChun transition down to exact hour/minute
  */
 function getEffectiveYear(year, month, day, solarHour = 12, solarMinute = 0) {
-  const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
   if (typeof Lunar !== 'undefined') {
-    const bazi = Lunar.fromDate(d).getEightChar();
+    const bazi = getLunarForVnTime(year, month, day, solarHour, solarMinute).getEightChar();
     const baziYearZhi = bazi.getYearZhi();
     const ZHI_ORDER = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
     const currentYearZhiIndex = ((year - 4) % 12 + 12) % 12;
@@ -983,8 +991,7 @@ function getMonthlyStar(effectiveYear, year, month, day, solarHour = 12, solarMi
   let chineseMonth = month === 1 ? 12 : month - 1;
 
   if (typeof Lunar !== 'undefined') {
-    const d = new Date(year, month - 1, day, solarHour, solarMinute, 0);
-    const bazi = Lunar.fromDate(d).getEightChar();
+    const bazi = getLunarForVnTime(year, month, day, solarHour, solarMinute).getEightChar();
     const zhi = bazi.getMonthZhi();
     const zhiToMonth = {'寅':1, '卯':2, '辰':3, '巳':4, '午':5, '未':6, '申':7, '酉':8, '戌':9, '亥':10, '子':11, '丑':12};
     if (zhiToMonth[zhi]) chineseMonth = zhiToMonth[zhi];
@@ -1190,6 +1197,7 @@ window.FlyingStar = {
   getHourlyStar,
   getSolarTermInfoExact,
   getSolarTermDetails,
+  getLunarForVnTime,
   resolveHourAndSolarTime,
   resolveHourInfo,
   classifyChart,
