@@ -131,7 +131,8 @@
       try {
         const details = window.FlyingStar.getSolarTermDetails(year, month, day, hour, minute);
         const termName = details.termName || details.rawName || 'Tiết Khí';
-        badgeTietKhi.textContent = `🌿 Tiết ${termName} (${details.donType} - Vận ${details.period})`;
+        const monthPart = details.monthLabel ? ` - ${details.monthLabel}` : '';
+        badgeTietKhi.textContent = `🌿 Tiết ${termName}${monthPart}`;
       } catch (e) {
         console.warn('Tiet khi badge calculation error:', e);
       }
@@ -418,10 +419,10 @@
       const toaName = result.sittingMountain.name;
       const huongName = result.facingMountain.name;
       
-      infoHTML += `<div>Tọa <strong>${toaName}</strong> - Hướng <strong>${huongName}</strong>`;
+      infoHTML += `<div class="info-main-title"><span>Tọa <strong>${toaName}</strong> - Hướng <strong>${huongName}</strong></span>`;
       
       if (result.chartType === 'THE_QUAI' && result.kiemInfo) {
-        infoHTML += ` - <strong>${result.kiemInfo.label}</strong>`;
+        infoHTML += ` <span>- <strong>${result.kiemInfo.label}</strong></span>`;
       }
       
       // Badge
@@ -443,20 +444,22 @@
         badgeText = 'Không Vong';
       }
       
-      infoHTML += ` <span class="chart-type-badge ${badgeClass}">${badgeText}</span>`;
+      infoHTML += ` <span class="chart-type-badge ${badgeClass}">${badgeText}</span></div>`;
 
       // Special Formation Badges
+      let specialBadges = '';
       if (result.hopThap && result.hopThap.hasHopThap) {
-        infoHTML += ` <span class="chart-type-badge badge-hop-thap" title="${result.hopThap.label}">✨ ${result.hopThap.label}</span>`;
+        specialBadges += `<span class="chart-type-badge badge-hop-thap" title="${result.hopThap.label}">✨ ${result.hopThap.label}</span>`;
       }
       if (result.tamBanQuai && result.tamBanQuai.hasTamBanQuai) {
-        infoHTML += ` <span class="chart-type-badge badge-tam-ban" title="${result.tamBanQuai.label}">💫 ${result.tamBanQuai.label}</span>`;
+        specialBadges += `<span class="chart-type-badge badge-tam-ban" title="${result.tamBanQuai.label}">💫 ${result.tamBanQuai.label}</span>`;
       }
       if (result.thatTinhDaKiep && result.thatTinhDaKiep.hasThatTinhDaKiep) {
-        infoHTML += ` <span class="chart-type-badge badge-da-kiep" title="${result.thatTinhDaKiep.label}">⚡ ${result.thatTinhDaKiep.label}</span>`;
+        specialBadges += `<span class="chart-type-badge badge-da-kiep" title="${result.thatTinhDaKiep.label}">⚡ ${result.thatTinhDaKiep.label}</span>`;
       }
-
-      infoHTML += `</div>`;
+      if (specialBadges) {
+        infoHTML += `<div class="info-special-badges">${specialBadges}</div>`;
+      }
       
       infoMain.innerHTML = infoHTML;
     }

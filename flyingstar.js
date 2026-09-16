@@ -797,6 +797,8 @@ function getSolarTermDetails(year, month, day, solarHour = 12, solarMinute = 0) 
   const info = getSolarTermInfoExact(year, month, day, solarHour, solarMinute);
   let termNameVi = '';
   let rawName = '';
+  let monthNum = 1;
+  let monthChi = 'Dần';
   if (typeof Lunar !== 'undefined') {
     const lunar = getLunarForVnTime(year, month, day, solarHour, solarMinute);
     const prevJq = lunar.getPrevJieQi(false);
@@ -804,13 +806,56 @@ function getSolarTermDetails(year, month, day, solarHour = 12, solarMinute = 0) 
       rawName = prevJq.getName();
       termNameVi = SOLAR_TERM_NAMES_VI[rawName] || rawName;
     }
+    const bazi = lunar.getEightChar();
+    const zhi = bazi.getMonthZhi();
+    const zhiMap = {
+      '寅': { num: 1, chi: 'Dần' },
+      '卯': { num: 2, chi: 'Mão' },
+      '辰': { num: 3, chi: 'Thìn' },
+      '巳': { num: 4, chi: 'Tỵ' },
+      '午': { num: 5, chi: 'Ngọ' },
+      '未': { num: 6, chi: 'Mùi' },
+      '申': { num: 7, chi: 'Thân' },
+      '酉': { num: 8, chi: 'Dậu' },
+      '戌': { num: 9, chi: 'Tuất' },
+      '亥': { num: 10, chi: 'Hợi' },
+      '子': { num: 11, chi: 'Tý' },
+      '丑': { num: 12, chi: 'Sửu' }
+    };
+    if (zhiMap[zhi]) {
+      monthNum = zhiMap[zhi].num;
+      monthChi = zhiMap[zhi].chi;
+    }
+  } else {
+    const termToMonth = {
+      'Lập Xuân': { num: 1, chi: 'Dần' }, 'Vũ Thủy': { num: 1, chi: 'Dần' },
+      'Kinh Trập': { num: 2, chi: 'Mão' }, 'Xuân Phân': { num: 2, chi: 'Mão' },
+      'Thanh Minh': { num: 3, chi: 'Thìn' }, 'Cốc Vũ': { num: 3, chi: 'Thìn' },
+      'Lập Hạ': { num: 4, chi: 'Tỵ' }, 'Tiểu Mãn': { num: 4, chi: 'Tỵ' },
+      'Mang Chủng': { num: 5, chi: 'Ngọ' }, 'Hạ Chí': { num: 5, chi: 'Ngọ' },
+      'Tiểu Thử': { num: 6, chi: 'Mùi' }, 'Đại Thử': { num: 6, chi: 'Mùi' },
+      'Lập Thu': { num: 7, chi: 'Thân' }, 'Xử Thử': { num: 7, chi: 'Thân' },
+      'Bạch Lộ': { num: 8, chi: 'Dậu' }, 'Thu Phân': { num: 8, chi: 'Dậu' },
+      'Hàn Lộ': { num: 9, chi: 'Tuất' }, 'Sương Giáng': { num: 9, chi: 'Tuất' },
+      'Lập Đông': { num: 10, chi: 'Hợi' }, 'Tiểu Tuyết': { num: 10, chi: 'Hợi' },
+      'Đại Tuyết': { num: 11, chi: 'Tý' }, 'Đông Chí': { num: 11, chi: 'Tý' },
+      'Tiểu Hàn': { num: 12, chi: 'Sửu' }, 'Đại Hàn': { num: 12, chi: 'Sửu' }
+    };
+    if (termToMonth[termNameVi]) {
+      monthNum = termToMonth[termNameVi].num;
+      monthChi = termToMonth[termNameVi].chi;
+    }
   }
+  const monthLabel = `Tháng ${monthNum} (${monthChi})`;
   return {
     period: info.period,
     isYang: info.isYang,
     termName: termNameVi,
     rawName: rawName,
-    donType: info.isYang ? 'Dương Độn' : 'Âm Độn'
+    donType: info.isYang ? 'Dương Độn' : 'Âm Độn',
+    monthNum,
+    monthChi,
+    monthLabel
   };
 }
 
