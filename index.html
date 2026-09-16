@@ -84,7 +84,21 @@
           <div class="survey-datetime-wrap">
             <div class="input-group">
               <label for="inputCurrentDateTime">Thời gian khảo sát (Dương lịch)</label>
-              <input type="datetime-local" id="inputCurrentDateTime" class="input-field input-datetime-local" step="60">
+              <div style="display: flex; gap: 8px;">
+                <input type="datetime-local" id="inputCurrentDateTime" class="input-field input-datetime-local" step="60" style="flex: 1;">
+                <select id="inputTimezone" class="input-field" style="width: auto; min-width: 120px;">
+                  <option value="+07:00" selected>VN (+7)</option>
+                  <option value="-08:00">Mỹ Tây (-8)</option>
+                  <option value="-05:00">Mỹ Đông (-5)</option>
+                  <option value="-06:00">Mỹ Trung (-6)</option>
+                  <option value="-07:00">Mỹ Núi (-7)</option>
+                  <option value="+09:00">Nhật/Hàn (+9)</option>
+                  <option value="+08:00">Đài/TQ (+8)</option>
+                  <option value="+10:00">Úc (+10)</option>
+                  <option value="+01:00">Châu Âu (+1)</option>
+                  <option value="+00:00">Anh (UTC 0)</option>
+                </select>
+              </div>
             </div>
             <div class="datetime-meta-info" id="datetimeMetaInfo">
               <span class="meta-badge badge-canh" id="badgeCanhGio" title="Canh Giờ Âm Dương">🕒 Giờ Thìn (07:00 - 08:59)</span>

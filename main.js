@@ -188,6 +188,20 @@
       inputCurrentDateTime.addEventListener('input', updateDateTimeBadges);
       inputCurrentDateTime.addEventListener('change', updateDateTimeBadges);
     }
+
+    // Listen to changes on inputTimezone to immediately update timezone offset and badges
+    const inputTz = document.getElementById('inputTimezone');
+    if (inputTz) {
+      const updateTz = () => {
+        const val = inputTz.value;
+        const sign = val.startsWith('-') ? -1 : 1;
+        const h = parseInt(val.slice(1, 3), 10);
+        window.currentTzOffsetHours = sign * h;
+        updateDateTimeBadges();
+      };
+      inputTz.addEventListener('change', updateTz);
+      updateTz();
+    }
     
     // Auto-calculate Van on any input/change/keyup/paste/blur
     if (inputYear) {
