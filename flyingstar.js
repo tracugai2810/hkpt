@@ -773,15 +773,22 @@ const CANH_GIO_NAMES_VI = [
 ];
 
 /**
- * Create a Lunar instance adjusted for Vietnam Standard Time (ICT, UTC+7).
- * lunar-javascript internal astronomical algorithms are referenced to Beijing Civil Time (CST, UTC+8).
- * Adding 1 hour maps Vietnam local time (UTC+7) to the exact astronomical solar longitude.
+ * Create a Lunar instance adjusted for the local timezone relative to Beijing Civil Time (CST, UTC+8).
+ * By default, if tzOffsetHours is not passed, it uses Vietnam Standard Time (ICT, UTC+7 -> diff = +1h).
+ * If the user's browser is in another timezone or a tzOffsetHours is given, it computes (8 - tzOffsetHours).
  * Using second = 59 ensures any astronomical transition occurring within the minute is recognized.
  */
-function getLunarForVnTime(year, month, day, solarHour = 12, solarMinute = 0, second = 59) {
-  const d = new Date(year, month - 1, day, solarHour + 1, solarMinute, second);
+function getLunarForVnTime(year, month, day, solarHour = 12, solarMinute = 0, second = 59, tzOffsetHours = null) {
+  let hourShift = 1; // Mặc định giờ Việt Nam (UTC+7 -> Bắc Kinh UTC+8 bù +1h)
+  if (tzOffsetHours !== null && !isNaN(tzOffsetHours)) {
+    hourShift = 8 - tzOffsetHours;
+  } else if (typeof window !== 'undefined' && window.currentTzOffsetHours !== undefined) {
+    hourShift = 8 - window.currentTzOffsetHours;
+  }
+  const d = new Date(year, month - 1, day, solarHour + hourShift, solarMinute, second);
   return Lunar.fromDate(d);
 }
+const getLunarForTime = getLunarForVnTime;
 
 /**
  * Get full solar term details and Vietnamese naming
@@ -1198,6 +1205,7 @@ window.FlyingStar = {
   getSolarTermInfoExact,
   getSolarTermDetails,
   getLunarForVnTime,
+  getLunarForTime,
   resolveHourAndSolarTime,
   resolveHourInfo,
   classifyChart,

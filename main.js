@@ -150,6 +150,11 @@
 
   // Initialize
   function init() {
+    // Detect local timezone offset in hours (e.g. +7 for VN, -5 for New York)
+    if (typeof window !== 'undefined' && window.currentTzOffsetHours === undefined) {
+      window.currentTzOffsetHours = -new Date().getTimezoneOffset() / 60;
+    }
+
     // Resolve all DOM elements
     inputDegree = document.getElementById('inputDegree');
     inputYear = document.getElementById('inputYear');
