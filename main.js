@@ -189,14 +189,47 @@
       inputCurrentDateTime.addEventListener('change', updateDateTimeBadges);
     }
 
-    // Listen to changes on inputTimezone to immediately update timezone offset and badges
+  function autoDetectTimezone(selectEl) {
+    if (!selectEl) return;
+    try {
+      const offsetMin = -new Date().getTimezoneOffset();
+      const sign = offsetMin >= 0 ? '+' : '-';
+      const absMin = Math.abs(offsetMin);
+      const hours = String(Math.floor(absMin / 60)).padStart(2, '0');
+      const mins = String(absMin % 60).padStart(2, '0');
+      const tzString = `${sign}${hours}:${mins}`;
+
+      let found = false;
+      for (let i = 0; i < selectEl.options.length; i++) {
+        if (selectEl.options[i].value === tzString) {
+          selectEl.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        const opt = document.createElement('option');
+        opt.value = tzString;
+        opt.textContent = `Vị trí hiện tại (${tzString})`;
+        selectEl.insertBefore(opt, selectEl.firstChild);
+        selectEl.selectedIndex = 0;
+      }
+    } catch (e) {
+      console.warn('Auto-detect timezone error:', e);
+    }
+  }
+
+  // Listen to changes on inputTimezone to immediately update timezone offset and badges
     const inputTz = document.getElementById('inputTimezone');
     if (inputTz) {
+      autoDetectTimezone(inputTz);
       const updateTz = () => {
         const val = inputTz.value;
         const sign = val.startsWith('-') ? -1 : 1;
         const h = parseInt(val.slice(1, 3), 10);
-        window.currentTzOffsetHours = sign * h;
+        const m = parseInt(val.slice(4, 6), 10) || 0;
+        window.currentTzOffsetHours = sign * (h + m / 60);
         updateDateTimeBadges();
       };
       inputTz.addEventListener('change', updateTz);
