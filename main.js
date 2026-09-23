@@ -584,18 +584,6 @@
       infoHour.textContent = timeStr ? `${hourmap[currentHour] || '-'} (${timeStr})` : (hourmap[currentHour] || '-');
     }
 
-    // Render Phep Mo Cua - Thanh Mon Quyet (New Independent Module)
-    try {
-      const phepMoCuaSection = document.getElementById('phepMoCuaSection');
-      if (phepMoCuaSection && window.PhepMoCuaThanhMon) {
-        phepMoCuaSection.innerHTML = window.PhepMoCuaThanhMon.renderHTML(result);
-        phepMoCuaSection.classList.remove('hidden');
-        window.PhepMoCuaThanhMon.bindEvents(result);
-      }
-    } catch (e) {
-      console.error('PhepMoCuaThanhMon error:', e);
-    }
-
     // Render Loan Dau (Exterior landscape) recommendation
     try {
       const loanDauSection = document.getElementById('loanDauSection');
