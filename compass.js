@@ -196,7 +196,9 @@
   /**
    * Draws a star trio badge: [Sao Sơn (Xanh Dương)] [Sao Vận (Lớn)] [Sao Hướng (Đỏ)]
    * positioned directly in the given direction sector.
-   * If hasThanhMon is true, renders a small door icon 🚪 directly above the central Sao Vận.
+   * UX/UI Optimized: Always renders in standard horizontal orientation (chiều chuẩn)
+   * with a frosted white pill backdrop to guarantee crystal-clear contrast and legibility
+   * over any complex blueprint, photo, or compass radial lines.
    */
   function drawSectorStarTrio(ctx, x, y, rotation, s, son, van, huong, isCenter, hasThanhMon) {
     ctx.save();
@@ -205,16 +207,37 @@
       ctx.rotate(rotation);
     }
 
-    const offsetSide = isCenter ? 26 * s : 24 * s;
+    const offsetSide = isCenter ? 24 * s : 22 * s;
+    const sonW = 19 * s;
+    const sonH = 21 * s;
+    const huongR = 10.5 * s;
+
+    // 0. Frosted / Clean White Pill Backdrop (UX: isolates numbers from floorplan & compass lines)
+    const pillW = offsetSide * 2 + sonW + 8 * s;
+    const pillH = sonH + 6 * s;
+    const pillR = pillH / 2;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.16)';
+    ctx.shadowBlur = 5 * s;
+    ctx.shadowOffsetY = 1.5 * s;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.95)';
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    drawRoundRect(ctx, -pillW / 2, -pillH / 2, pillW, pillH, pillR);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.stroke();
+    ctx.restore();
 
     // 1. Sao Sơn (Left) - Blue Rounded Badge (đồng bộ màu Xanh với TỌA)
-    const sonW = 20 * s;
-    const sonH = 22 * s;
     ctx.fillStyle = '#1d4ed8';
     ctx.strokeStyle = '#1e40af';
     ctx.lineWidth = 1 * s;
     ctx.beginPath();
-    drawRoundRect(ctx, -offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3 * s);
+    drawRoundRect(ctx, -offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3.5 * s);
     ctx.fill();
     ctx.stroke();
 
@@ -222,21 +245,20 @@
     ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(son !== undefined ? son.toString() : '-', -offsetSide, 1 * s);
+    ctx.fillText(son !== undefined ? son.toString() : '-', -offsetSide, 0.8 * s);
 
     // 2. Sao Vận (Center) - Large Bold Number with crisp white halo
-    ctx.font = `900 ${Math.round(isCenter ? 22 * s : 19 * s)}px "Inter", "Noto Sans", sans-serif`;
+    ctx.font = `900 ${Math.round(isCenter ? 20 * s : 17.5 * s)}px "Inter", "Noto Sans", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 3.5 * s;
+    ctx.lineWidth = 2.5 * s;
     ctx.lineJoin = 'round';
-    ctx.strokeText(van !== undefined ? van.toString() : '-', 0, 1 * s);
+    ctx.strokeText(van !== undefined ? van.toString() : '-', 0, 0.8 * s);
     ctx.fillStyle = isCenter ? '#1d4ed8' : '#0f172a';
-    ctx.fillText(van !== undefined ? van.toString() : '-', 0, 1 * s);
+    ctx.fillText(van !== undefined ? van.toString() : '-', 0, 0.8 * s);
 
-    // 3. Sao Hướng (Right) - Red Circular Badge
-    const huongR = 11 * s;
+    // 3. Sao Hướng (Right) - Red Circular Badge (đồng bộ màu Đỏ với HƯỚNG)
     ctx.fillStyle = '#dc2626';
     ctx.strokeStyle = '#b91c1c';
     ctx.lineWidth = 1 * s;
@@ -249,17 +271,17 @@
     ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(huong !== undefined ? huong.toString() : '-', offsetSide, 1 * s);
+    ctx.fillText(huong !== undefined ? huong.toString() : '-', offsetSide, 0.8 * s);
 
-    // 4. Thành Môn Small Door Icon (nhỏ nhắn, nằm ngay trên số Vận, không text, không nền)
+    // 4. Thành Môn Small Door Icon (nhỏ nhắn, nằm ngay trên hộp sao, không che số)
     if (hasThanhMon) {
       ctx.save();
-      ctx.font = `${Math.round(12 * s)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.font = `${Math.round(13 * s)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
       ctx.shadowBlur = 4 * s;
-      ctx.fillText('🚪', 0, -18 * s);
+      ctx.fillText('🚪', 0, -pillH / 2 - 8 * s);
       ctx.restore();
     }
 
@@ -278,6 +300,7 @@
     const palaces = options.palaces || null;
     const isMinimal = !!options.minimalMode;
     const thanhMon = options.thanhMon || null;
+    const overlayRotation = options.overlayRotation || 0;
 
     // 1. Set canvas resolution to 1000x1000
     canvas.width = 1000;
@@ -294,7 +317,11 @@
     const palaceDeg = (PALACE_CENTER_DEG && PALACE_CENTER_DEG[facingPalace] !== undefined) ? PALACE_CENTER_DEG[facingPalace] : 180;
     const rotDeg = -(palaceDeg - 180);
 
-    // 4. Apply main rotation
+    // 4. Counter-rotation so star badges remain 100% horizontal & upright (chiều chuẩn) to the user's eyes
+    const totalBaseRotDeg = rotDeg + overlayRotation;
+    const starRot = -totalBaseRotDeg * Math.PI / 180;
+
+    // 5. Apply main rotation
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rotDeg * Math.PI / 180);
@@ -439,7 +466,7 @@
         ctx.restore();
       }
 
-      // Render Sector Flying Stars directly in each direction sector & center
+      // Render Sector Flying Stars directly in each direction sector & center (Always Upright)
       if (showSectorStars && palaces) {
         for (let p = 1; p <= 9; p++) {
           if (p === 5) continue;
@@ -448,7 +475,6 @@
           const hasTM = !!(thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.includes(p));
           if (pData && dirDeg !== null) {
             const starPos = getXY(cx, cy, R_STAR_SECTOR, dirDeg);
-            const starRot = (dirDeg + 180) * Math.PI / 180;
             drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false, hasTM);
           }
         }
@@ -456,15 +482,17 @@
         // Draw Center Palace (Palace 5 - Trung Cung)
         const centerData = palaces[5];
         if (centerData) {
-          drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true, false);
+          drawSectorStarTrio(ctx, cx, cy, starRot, s, centerData.son, centerData.van, centerData.huong, true, false);
         }
       }
 
-      // Center red dot
-      ctx.beginPath();
-      ctx.arc(cx, cy, 4.5 * s, 0, 2 * Math.PI);
-      ctx.fillStyle = '#dc2626';
-      ctx.fill();
+      // Center red dot (only if center stars are not rendered)
+      if (!(showSectorStars && palaces && palaces[5])) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4.5 * s, 0, 2 * Math.PI);
+        ctx.fillStyle = '#dc2626';
+        ctx.fill();
+      }
 
       ctx.restore();
       return;
@@ -482,7 +510,7 @@
     const R_RING_2 = 206 * s;
     const R_DIR_TEXT = 184 * s;
     const R_RING_3 = 162 * s;
-    const R_STAR_SECTOR = 105 * s;
+    const R_STAR_SECTOR = 112 * s;
 
     // 5. Bold concentric guide circles
     drawCircle(ctx, cx, cy, R_TICK_OUT, '#dc2626', 1.8 * s);
@@ -589,7 +617,7 @@
       ctx.restore();
     }
 
-    // 11. Render Sector Flying Stars directly in each direction sector & center
+    // 11. Render Sector Flying Stars directly in each direction sector & center (Always Upright)
     if (showSectorStars && palaces) {
       // Draw 8 outer palace sectors
       for (let p = 1; p <= 9; p++) {
@@ -599,7 +627,6 @@
         const hasTM = !!(thanhMon && thanhMon.dacThanhMonPalaces && thanhMon.dacThanhMonPalaces.includes(p));
         if (pData && dirDeg !== null) {
           const starPos = getXY(cx, cy, R_STAR_SECTOR, dirDeg);
-          const starRot = (dirDeg + 180) * Math.PI / 180;
           drawSectorStarTrio(ctx, starPos.x, starPos.y, starRot, s, pData.son, pData.van, pData.huong, false, hasTM);
         }
       }
@@ -607,7 +634,7 @@
       // Draw Center Palace (Palace 5 - Trung Cung)
       const centerData = palaces[5];
       if (centerData) {
-        drawSectorStarTrio(ctx, cx, cy, 0, s, centerData.son, centerData.van, centerData.huong, true, false);
+        drawSectorStarTrio(ctx, cx, cy, starRot, s, centerData.son, centerData.van, centerData.huong, true, false);
       }
     }
 

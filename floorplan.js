@@ -187,6 +187,7 @@
         boxPoints = [];
         polygonPoints = [];
         fitImageToContainer();
+        renderCompass();
       });
     }
 
@@ -652,7 +653,8 @@
       showSectorStars: true,
       palaces: palaces,
       minimalMode: isMinimalMode,
-      thanhMon: thanhMon
+      thanhMon: thanhMon,
+      overlayRotation: currentRotation
     });
   }
 
@@ -1041,10 +1043,14 @@
     };
 
     const onEnd = function() {
+      const wasDragging = isDragging;
       isDragging = false;
       isMovingCenter = false;
       isPanning = false;
       touchStartDist = 0;
+      if (wasDragging) {
+        renderCompass();
+      }
     };
 
     floorplanContainer.addEventListener('mousedown', onStart);
@@ -1249,7 +1255,8 @@
           showSectorStars: true,
           palaces: palaces,
           minimalMode: isMinimalMode,
-          thanhMon: thanhMon
+          thanhMon: thanhMon,
+          overlayRotation: currentRotation
         });
       }
 
