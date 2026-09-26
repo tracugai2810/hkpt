@@ -212,27 +212,11 @@
     const sonH = 21 * s;
     const huongR = 10.5 * s;
 
-    // 0. Frosted / Clean White Pill Backdrop (UX: isolates numbers from floorplan & compass lines)
-    const pillW = offsetSide * 2 + sonW + 8 * s;
-    const pillH = sonH + 6 * s;
-    const pillR = pillH / 2;
-
-    ctx.save();
-    ctx.shadowColor = 'rgba(15, 23, 42, 0.16)';
-    ctx.shadowBlur = 5 * s;
-    ctx.shadowOffsetY = 1.5 * s;
-
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
-    ctx.strokeStyle = 'rgba(203, 213, 225, 0.95)';
-    ctx.lineWidth = 1 * s;
-    ctx.beginPath();
-    drawRoundRect(ctx, -pillW / 2, -pillH / 2, pillW, pillH, pillR);
-    ctx.fill();
-    ctx.shadowColor = 'transparent';
-    ctx.stroke();
-    ctx.restore();
-
     // 1. Sao Sơn (Left) - Blue Rounded Badge (đồng bộ màu Xanh với TỌA)
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+    ctx.shadowBlur = 3 * s;
+    ctx.shadowOffsetY = 1 * s;
     ctx.fillStyle = '#1d4ed8';
     ctx.strokeStyle = '#1e40af';
     ctx.lineWidth = 1 * s;
@@ -240,6 +224,7 @@
     drawRoundRect(ctx, -offsetSide - sonW / 2, -sonH / 2, sonW, sonH, 3.5 * s);
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
@@ -247,18 +232,22 @@
     ctx.textBaseline = 'middle';
     ctx.fillText(son !== undefined ? son.toString() : '-', -offsetSide, 0.8 * s);
 
-    // 2. Sao Vận (Center) - Large Bold Number with crisp white halo
+    // 2. Sao Vận (Center) - Large Bold Number with crisp white halo outline (100% transparent around it)
     ctx.font = `900 ${Math.round(isCenter ? 20 * s : 17.5 * s)}px "Inter", "Noto Sans", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2.5 * s;
+    ctx.lineWidth = 3.5 * s;
     ctx.lineJoin = 'round';
     ctx.strokeText(van !== undefined ? van.toString() : '-', 0, 0.8 * s);
     ctx.fillStyle = isCenter ? '#1d4ed8' : '#0f172a';
     ctx.fillText(van !== undefined ? van.toString() : '-', 0, 0.8 * s);
 
     // 3. Sao Hướng (Right) - Red Circular Badge (đồng bộ màu Đỏ với HƯỚNG)
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+    ctx.shadowBlur = 3 * s;
+    ctx.shadowOffsetY = 1 * s;
     ctx.fillStyle = '#dc2626';
     ctx.strokeStyle = '#b91c1c';
     ctx.lineWidth = 1 * s;
@@ -266,6 +255,7 @@
     ctx.arc(offsetSide, 0, huongR, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `900 ${Math.round(14 * s)}px "Inter", "Noto Sans", sans-serif`;
@@ -273,7 +263,7 @@
     ctx.textBaseline = 'middle';
     ctx.fillText(huong !== undefined ? huong.toString() : '-', offsetSide, 0.8 * s);
 
-    // 4. Thành Môn Small Door Icon (nhỏ nhắn, nằm ngay trên hộp sao, không che số)
+    // 4. Thành Môn Small Door Icon (nhỏ nhắn, nằm ngay trên số Vận, không che số, không che nền)
     if (hasThanhMon) {
       ctx.save();
       ctx.font = `${Math.round(13 * s)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
@@ -281,7 +271,7 @@
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
       ctx.shadowBlur = 4 * s;
-      ctx.fillText('🚪', 0, -pillH / 2 - 8 * s);
+      ctx.fillText('🚪', 0, -16 * s);
       ctx.restore();
     }
 
